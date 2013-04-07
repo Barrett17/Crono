@@ -1,0 +1,40 @@
+* Aggiungere file LICENSE e ricordarsi di aggiungere licenza e creatore dei suoni
+
+* Modificare lo slider del tempo con dei BCheckBox che permettono di selezionare il 
+  tempo semplice, 2/4, 3/4, 4/4 ed in futuro anche tempi composti tipo 7/4.
+
+* Inoltre bisogna Aggiungere una gestione decente degli accenti, in modo da poterli selezionare
+  su una battuta qualsiasi, l'idea è quella di fornire degli altri checkbox che indicano la 
+  battuta e che cambiano quando cambiamo il tempo, ad esempio in 2/4 avremo due checkbox
+  , in 3/4  tre  e così via, quindi selezionando uno o più checkbox l'accento verrà 
+  eseguito sulla battuta selezionata. 
+
+* Creare la lancetta del metronomo che oscilla con le misure sotto.
+
+* L'applicazione deve essere anche un replicante in modo da trascinarlo sul desktop
+
+* Aggiungere nei settings l'opzione per cambiare i suoni.
+
+* Supporto per i profili (?!?!)
+
+* Modificare il core, in modo che quando si imposta un settaggio 
+riguardo i BPM o riguardo gli accenti, viene creato  un flusso audio 
+'precompilato' che poi viene eseguito. 
+
+
+
+
+* Migliorar graficamente il tutto, aggiungere dei BBox con una label per dividere 
+  ed allargare�la gui dal punto di vista visivo, così è troppo compress- FATTO
+
+* Creare una window pper i settings - FATTO
+
+* Mettere slider e textcontrol dei bpm in orizzontale. - FATTO
+
+* Aggiungere un menù a tendina con about..chiudi settings 
+  e cose del genere - FATTO
+
+* Cambiare i suoni con quelli del drumkit di hyrdrogen - FATTO
+
+* La parte dove scegliere i bpm deve essere sia uno slider che un BTextControl - FATTO
+
