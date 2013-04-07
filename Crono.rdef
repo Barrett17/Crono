@@ -11,5 +11,5 @@ resource app_version {
 	internal = 0,
 
 	short_info = "Crono",
-	long_info = "Crono ©2005-2009 Haiku, Inc."
+	long_info = ""
 };
