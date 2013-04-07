@@ -6,8 +6,8 @@
  * Authors:
  *		Davide Gessa, dak.linux@gmail.com
  */
-#ifndef BETICK_WINDOW_H
-#define BETICK_WINDOW_H
+#ifndef CRONO_WINDOW_H
+#define CRONO_WINDOW_H
 
 #include <Application.h>
 #include <GroupLayout.h>
@@ -15,22 +15,21 @@
 #include <View.h>
 #include <stdio.h>
 #include <time.h>
-#include "TickView.h"
-
+#include "CronoView.h"
 
 
 /**
  * Finestra del metronomo
  */
-class TickWindow : public BWindow {
+class CronoWindow : public BWindow {
 public:
-							TickWindow(BRect frame);
+							CronoWindow(BRect frame);
 	virtual void			MessageReceived(BMessage* mesage);
 	virtual bool    		QuitRequested();
 
 
 private:
-			TickView* 		fTickView;
+			CronoView* 		fCronoView;
 };
 
 

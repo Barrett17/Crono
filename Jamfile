@@ -3,7 +3,7 @@
 
 NAME = Crono ;
 TYPE = APP ;
-SRCS = Crono.cpp TickApp.cpp TickCore.cpp TickProducer.cpp TickView.cpp TickWindow.cpp
+SRCS = Crono.cpp App.cpp Core.cpp CronoView.cpp CronoWindow.cpp
 	Settings.cpp SettingsView.cpp SettingsWindow.cpp ;
 RSRCS = ;
 LIBS = ;
@@ -16,7 +16,7 @@ WARNINGS = ALL ;
 SYMBOLS = TRUE ;
 DEBUGGER = TRUE ;
 COMPILER_FLAGS =  ;
-LINKER_FLAGS = -lbe -lmedia ;
+LINKER_FLAGS = -lbe -lmedia -lstdc++ ;
 # To compile with gcc4 add "-lstdc++"
 DRIVER_PATH =  ;
 include $(BUILDHOME)/etc/Jamfile-engine ;

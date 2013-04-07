@@ -4,146 +4,147 @@
  * Distributed under the terms of the MIT License for non commercial use.
  *
  * Authors:
- *		Davide Gessa, dak.linux@gmail.com
- *		Barrett, barrett666@gmail.com
+ *		Dario Casalinuovo, b.vitruvio@gmail.com
  */
+#include "Core.h"
 
-#include <MediaEventLooper.h>
-#include <MediaRoster.h>
-#include <TimeSource.h>
-
-#include "TickCore.h"
-#include "TickProducer.h"
+#include <SoundPlayer.h>
 
 
-/*
- * Initialize the class with default values
- */
-TickCore::TickCore()
+static	BSoundPlayer* kPlayer;
+static	BMediaTrack* kTic;
+static	BMediaTrack* kTac;
+
+void
+Core::PlayBuffer(void* cookie, void* buffer, size_t size,
+const media_raw_audio_format& format)
+{
+	int64 frames = 0;
+	//fPlayTrack->ReadFrames(buffer, &frames);
+
+	if (frames <=0)
+		kPlayer->SetHasData(false);
+}
+
+
+//Initialize the class with default values
+Core::Core()
 	:
 	fSpeed(DEFAULT_SPEED),
 	fMeter(0),
 	fVolume(DEFAULT_VOLUME),
 	fRunning(false)
 {
-	fTickProducer = new TickProducer();
-	Connect();
-	
-	
-	fTickProducer->SetMeter(Meter());
-	fTickProducer->SetSpeed(Speed());
+	media_raw_audio_format format;
+	format = media_raw_audio_format::wildcard;
+	format.format = media_raw_audio_format::B_AUDIO_FLOAT;
+	format.byte_order = B_MEDIA_LITTLE_ENDIAN;
+
+	kPlayer = new BSoundPlayer(&format, 
+		"CronoPlayback", PlayBuffer);
+
+	LoadTicks();
+
+	kPlayer->SetHasData(true);
 }
 
 
-/*
- * Destroy the class
- */
-TickCore::~TickCore()
+// Destroy the class
+Core::~Core()
 {
-	Disconnect();
-	delete fTickProducer;
+	UnloadTicks();
+	delete kPlayer;
 }
 
 
-// metodo per controllare eventuali errori interni
+// Return internal errors
 status_t
-TickCore::InitCheck()
+Core::InitCheck()
 {
 	return fErr;
 }
 
 
-// questo dovrebbe occuparsi di connettere i nodi
+// Load sound tracks
 status_t
-TickCore::Connect() 
+Core::LoadTicks() 
 {
-	fMediaRoster = BMediaRoster::Roster(&fErr);
-	if ((fErr != B_OK) || !fMediaRoster)) {
-		return fErr;
-	}
 
-	return fMediaRoster->RegisterNode(fTickProducer);
+	return B_ERROR;
 }
 
 
-// disconnette i nodi
+// Unload sound tracks
 status_t
-TickCore::Disconnect() 
+Core::UnloadTicks() 
 {
-	return fMediaRoster->UnregisterNode(fTickProducer);
+
+	return B_ERROR;
 }
 
 
-/** Start the metronome */
+// Start the metronome 
 void 
-TickCore::Start()
+Core::Start()
 {
 	if (!fRunning) {
-		fRunning = 1;	
-
-		fMediaRoster->StartNode(fTickProducer->Node(), 
-					fTickProducer->TimeSource()->Now() + 5000LL);
+		fRunning = true;
+		kPlayer->Start();
 	}
 }
 
 
-/** Stop the metronome */
+// Stop the metronome 
 void 
-TickCore::Stop()
+Core::Stop()
 {
 	if (fRunning) {
-		fRunning = 0;
-		
-		fMediaRoster->StopNode(fTickProducer->Node(), 0);
+		fRunning = false;
+		kPlayer->Stop();
 	}
 }
 
 
 void 
-TickCore::SetSpeed(int32 s)
+Core::SetSpeed(int32 s)
 {
-	if (s <= 500 && s > 1) {
+	if (s <= 500 && s > 1)
 		fSpeed = s;
-		fTickProducer->SetSpeed(s);
-	}
 }
 
 
 void 
-TickCore::SetMeter(int32 m)
+Core::SetMeter(int32 m)
 {
-	if (m < 10 && m >= 0) {
+	if (m < 10 && m >= 0)
 		fMeter = m;
-		fTickProducer->SetMeter(m);
-	}
 }
 
 
 void 
-TickCore::SetVolume(int32 v)
+Core::SetVolume(int32 v)
 {
-	if (v <= 100 && v >= 0) {
+	if (v <= 100 && v >= 0)
 		fVolume = v;
-	}
 }
 
 
 int32 
-TickCore::Volume()
+Core::Volume()
 {
 	return fVolume;	
 }
 
 
 int32
-TickCore::Speed()
+Core::Speed()
 {
 	return fSpeed;	
 }
 
 
 int32
-TickCore::Meter()
+Core::Meter()
 {
 	return fMeter;	
 }

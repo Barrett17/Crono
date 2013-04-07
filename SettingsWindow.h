@@ -6,13 +6,14 @@
  * Authors:
  *		Davide Gessa, dak.linux@gmail.com
  */
-#ifndef BETICK_SETTINGS_WINDOW_H
-#define BETICK_SETTINGS_WINDOW_H
+#ifndef CRONO_SETTINGS_WINDOW_H
+#define CRONO_SETTINGS_WINDOW_H
 
 #include <Application.h>
 #include <GroupLayout.h>
 #include <Window.h>
 #include <View.h>
+
 #include "SettingsView.h"
 
 

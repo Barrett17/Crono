@@ -4,45 +4,33 @@
  * Distributed under the terms of the MIT License for non commercial use.
  *
  * Authors:
- *		Casalinuovo Dario, barrett666@gmail.com
+ *		Casalinuovo Dario, b.vitruvio@gmail.com
  *		Davide Gessa, dak.linux@gmail.com
  */
-#include <Application.h>
+#include "CronoView.h"
+
 #include <Alert.h>
 #include <Button.h>
-#include <GroupLayout.h>
 #include <GroupView.h>
-#include <OS.h>
 #include <Menu.h>
-#include <MenuBar.h>
 #include <MenuItem.h>
 #include <Slider.h>
 #include <TextControl.h>
-#include <Window.h>
 #include <View.h>
 #include <Box.h>
 #include <RadioButton.h>
 
-#include "TickApp.h"
-#include "TickCore.h"
-#include "TickView.h"
+#include "App.h"
+#include "Core.h"
 #include "SettingsWindow.h"
 
 #include <math.h>
 #include <stdlib.h>
 
 
-TickView::~TickView()
-{
-//	fTickCore->Stop();
-//	exit_thread(fTickCore->loopThread);
-	delete fTickCore;
-}
-
-
-TickView::TickView()
+CronoView::CronoView()
 	:
-	BView("TickView", B_WILL_DRAW, 0)
+	BView("CronoView", B_WILL_DRAW, 0)
 {
 	rgb_color barColor = { 0, 0, 240 };
 	rgb_color fillColor = { 240, 0, 0 };
@@ -54,9 +42,9 @@ TickView::TickView()
 	SetLayout(rootLayout);
 
 	// Core
-	fTickCore = new TickCore();
-	fTickCore->SetVolume(80);
-	fTickCore->SetSpeed(60);
+	fCore = new Core();
+	fCore->SetVolume(80);
+	fCore->SetSpeed(60);
 
 
 	// Menu bar
@@ -89,7 +77,7 @@ TickView::TickView()
 	fVolumeSlider->SetHashMarks(B_HASH_MARKS_BOTTOM);
 	fVolumeSlider->SetHashMarkCount(10);
 	fVolumeSlider->SetBarColor(barColor);
-	fVolumeSlider->SetValue(fTickCore->Volume());
+	fVolumeSlider->SetValue(fCore->Volume());
 	//fVolumeSlider->SetPosition(((float) DEFAULT_VOLUME) / 100.0);
 	fVolumeSlider->UseFillColor(true, &fillColor);
 	
@@ -112,7 +100,7 @@ TickView::TickView()
 	fSpeedSlider->SetHashMarks(B_HASH_MARKS_BOTTOM);
 	fSpeedSlider->SetHashMarkCount(10);
 	fSpeedSlider->SetBarColor(barColor);
-	fSpeedSlider->SetValue(fTickCore->Speed());
+	fSpeedSlider->SetValue(fCore->Speed());
 	fSpeedSlider->UseFillColor(true, &fillColor);
 	
 	
@@ -170,8 +158,16 @@ TickView::TickView()
 	rootLayout->AddView(buttonGroup);
 }
 
+
+CronoView::~CronoView()
+{
+	fCore->Stop();
+	delete fCore;
+}
+
+
 void
-TickView::AttachedToWindow()
+CronoView::AttachedToWindow()
 {
 	fStartButton->SetTarget(this);
 	fStopButton->SetTarget(this);
@@ -191,7 +187,7 @@ TickView::AttachedToWindow()
 
 
 void
-TickView::MessageReceived(BMessage *message)
+CronoView::MessageReceived(BMessage *message)
 {
 	float position;
 	
@@ -200,22 +196,21 @@ TickView::MessageReceived(BMessage *message)
 
 		case MSG_CLOSE:
 		{
-	//		this->Window()->QuitRequested();
 			be_app->PostMessage(B_QUIT_REQUESTED);
 			break;
 		}
 
 		case MSG_ABOUT:
 		{
-			BAlert *alert = new BAlert("About BeTick", 
-			"\nBeTick V0.0.1\n\n"
-			"Copyright ©2009 - 2011 Dario Casalinuovo\n\n"
-			"Copyright ©2009 - 2011 Davide Gessa \n\n"
-			"BeTick is a Software Metronome for Haiku "
-			"released under MIT license for non commercial use.\n\n"
-			"WARNING - BeTick is unstable and unfinished, this is not\n"
+			BAlert *alert = new BAlert("About Crono", 
+			"\nCrono Metronome V0.0.3\n\n"
+			"Copyright ©2009 - 2013 Dario Casalinuovo\n\n"
+			"Copyright ©2009 - 2013 Davide Gessa \n\n"
+			"Crono is a Software Metronome for Haiku "
+			"Released under MIT license for non commercial use.\n\n"
+			"WARNING - Crono is unstable and unfinished, this is not\n"
 			"the final release! Please submit us bugs and improvements ideas.\n\n"
-			"Project Homepage:\n http://dev.osdrawer.net/projects/betick\n",
+			"Project Homepage:\n https://github.com/Barrett17/Crono\n",
 			"OK", NULL, NULL, B_WIDTH_FROM_WIDEST, B_EVEN_SPACING, B_INFO_ALERT);
 			alert->Go();
 
@@ -240,7 +235,7 @@ TickView::MessageReceived(BMessage *message)
 		case MSG_START:
 		{
 			printf("Start\n");
-			fTickCore->Start();
+			fCore->Start();
 			fStopButton->MakeDefault(true);
 			break;
 		}
@@ -248,7 +243,7 @@ TickView::MessageReceived(BMessage *message)
 		case MSG_STOP:
 		{
 			printf("Stop\n");
-			fTickCore->Stop();
+			fCore->Stop();
 			fStartButton->MakeDefault(true);
 			break;
 		}
@@ -258,7 +253,7 @@ TickView::MessageReceived(BMessage *message)
 			position = fVolumeSlider->Position();
 			position = 100 * position;
 			printf("Volume: %d\n", (int) position);
-			fTickCore->SetVolume(((int) position));
+			fCore->SetVolume(((int) position));
 			break;
 		}
 
@@ -277,7 +272,7 @@ TickView::MessageReceived(BMessage *message)
 			else
 			{
 				fMeterEntry->SetEnabled(false);
-				fTickCore->SetMeter(((int) selected + 1));
+				fCore->SetMeter(((int) selected + 1));
 			}
 					
 			break;
@@ -287,7 +282,7 @@ TickView::MessageReceived(BMessage *message)
 		{
 			unsigned position = abs(atoi(fMeterEntry->Text()));
 			
-			fTickCore->SetMeter(((int) position));
+			fCore->SetMeter(((int) position));
 			break;
 		}
 
@@ -306,7 +301,7 @@ TickView::MessageReceived(BMessage *message)
 				bpm = 1;
 			}
 				
-			fTickCore->SetSpeed(((int) bpm));
+			fCore->SetSpeed(((int) bpm));
 			
 			fSpeedSlider->SetPosition(((float) bpm / 500));
 			printf("Speed: %s %d\n", fSpeedEntry->Text(), bpm);
@@ -325,7 +320,7 @@ TickView::MessageReceived(BMessage *message)
 			sprintf(strv, "%d", (int) v);
 			fSpeedEntry->SetText(strv);
 
-			fTickCore->SetSpeed((int) v);
+			fCore->SetSpeed((int) v);
 			
 			break;
 		}
@@ -334,5 +329,3 @@ TickView::MessageReceived(BMessage *message)
 			BView::MessageReceived(message);
 	}			
 }
-
-

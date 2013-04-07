@@ -3,7 +3,7 @@
  * Distributed under the terms of the MIT License for non commercial use.
  *
  * Authors:
- *		Dario Casalinuovo, barrett666@gmail.com
+ *		Dario Casalinuovo, b.vitruvio@gmail.com
  */
 #include "Settings.h"
 
@@ -18,8 +18,8 @@ Settings::Settings(BPath path)
 	:
 	BMessage(kMsgSettings), fSettingsPath(path)
 {
-		fSettingsFile = new(std :: nothrow) BFile(path.Path(),
-			B_READ_WRITE | B_CREATE_FILE);
+	fSettingsFile = new(std :: nothrow) BFile(path.Path(),
+		B_READ_WRITE | B_CREATE_FILE);
 }
 
 
@@ -129,13 +129,13 @@ Settings::RemoveSetting(const char* name)
 }
 
 
-
 status_t
 Settings::DeleteSettings()
 {
 	delete fSettingsFile;
 	BEntry* entry = new BEntry(fSettingsPath.Path(), false);
-	printf("Settings::DeleteSettings() the entry is %s\n", fSettingsPath.Path());
+	printf("Settings::DeleteSettings() the entry is %s\n",
+		fSettingsPath.Path());
 
 	status_t ret = entry->Remove();
 	if (ret < B_OK)

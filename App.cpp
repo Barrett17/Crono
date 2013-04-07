@@ -6,29 +6,29 @@
  * Authors:
  *		Davide Gessa, dak.linux@gmail.com
  */
+#include "App.h"
+
 #include <Application.h>
 #include <GroupLayout.h>
 #include <Window.h>
 #include <View.h>
 
-#include "TickApp.h"
-#include "TickCore.h"
-#include "TickWindow.h"
+#include "Core.h"
+#include "CronoWindow.h"
 
-TickApp::TickApp() 
+App::App() 
 	: 
-	BApplication("application/x-vnd.Haiku-BeTick")
+	BApplication("application/x-vnd.Haiku-Crono")
 {
 	BRect windowRect;
 	windowRect.Set(50,50,410,365);
-	fWindow = new TickWindow(windowRect);
+	fWindow = new CronoWindow(windowRect);
 	fWindow->Show();
 }
 
 
-
 void
-TickApp::MessageReceived(BMessage* message)
+App::MessageReceived(BMessage* message)
 {
 	switch (message->what)
 	{
@@ -37,4 +37,3 @@ TickApp::MessageReceived(BMessage* message)
 	}
 
 }
-

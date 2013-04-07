@@ -7,8 +7,11 @@
  *		Davide Gessa, dak.linux@gmail.com
  *		Dario Casalinuovo
  */
-#ifndef BETICK_VIEW_H
-#define BETICK_VIEW_H
+#ifndef CRONO_VIEW_H
+#define CRONO_VIEW_H
+
+#include <SupportDefs.h>
+#include <View.h>
 
 class BMenuBar;
 class BMenu;
@@ -16,7 +19,7 @@ class BButton;
 class BSlider;
 class BTextControl;
 class BRadioButton;
-class TickCore;
+class Core;
 
 const int32 MSG_SETTINGS			= 0x5;
 const int32 MSG_EDIT				= 0x6;
@@ -33,29 +36,27 @@ const int32 MSG_METER_RADIO			= 0x15;
 /**
  * View del metronomo
  */
-class TickView : public BView {
+class CronoView : public BView {
 public:
-							TickView();
-							~TickView();
+							CronoView();
+							~CronoView();
 			void			AttachedToWindow();	
 	virtual	void			MessageReceived(BMessage* message);
 
 private:
-			BMenuBar		*fMenuBar;
-			BMenu			*fFileMenu;
-			BMenu			*fEditMenu;
-			BButton			*fStartButton;
-			BButton			*fStopButton;
-			BSlider			*fVolumeSlider;
+			BMenuBar*		fMenuBar;
+			BMenu*			fFileMenu;
+			BMenu*			fEditMenu;
+			BButton*		fStartButton;
+			BButton*		fStopButton;
+			BSlider*		fVolumeSlider;
 
-			BRadioButton	*fMeterRadios[5];
-			BTextControl	*fMeterEntry;
+			BRadioButton*	fMeterRadios[5];
+			BTextControl*	fMeterEntry;
 
-			BTextControl	*fSpeedEntry;
-			BSlider			*fSpeedSlider;
-			TickCore		*fTickCore;
+			BTextControl*	fSpeedEntry;
+			BSlider*		fSpeedSlider;
+			Core*			fCore;
 };
-
-
 
 #endif

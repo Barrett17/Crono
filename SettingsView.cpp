@@ -4,31 +4,16 @@
  * Distributed under the terms of the MIT License for non commercial use.
  *
  * Authors:
- *		Casalinuovo Dario, barrett666@gmail.com
+ *		Casalinuovo Dario, b.vitruvio@gmail.com
  *		Davide Gessa, dak.linux@gmail.com
  */
-#include <Application.h>
-#include <Alert.h>
-#include <Button.h>
+#include "SettingsView.h"
+
 #include <GroupLayout.h>
 #include <GroupView.h>
-#include <OS.h>
-#include <Menu.h>
-#include <MenuBar.h>
-#include <MenuItem.h>
-#include <Slider.h>
-#include <TextControl.h>
-#include <Window.h>
-#include <View.h>
 #include <Box.h>
 #include <CheckBox.h>
-#include <File.h>
-#include <FindDirectory.h>
-#include <Input.h>
 #include <LayoutBuilder.h>
-#include <SpaceLayoutItem.h>
-
-#include "SettingsView.h"
 
 
 SettingsView::~SettingsView()
@@ -108,5 +93,3 @@ SettingsView::MessageReceived(BMessage *message)
 			BView::MessageReceived(message);
 	}			
 }
-
-

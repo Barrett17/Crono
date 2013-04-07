@@ -6,14 +6,15 @@
  * Authors:
  *		Davide Gessa, dak.linux@gmail.com
  */
-#ifndef BETICK_SETTINGSVIEW_H
-#define BETICK_SETTINGSVIEW_H
+#ifndef CRONO_SETTINGSVIEW_H
+#define CRONO_SETTINGSVIEW_H
 
-class BMenuBar;
-class BMenu;
-class BButton;
-class BSlider;
-class BTextControl;
+#include <Button.h>
+#include <Menu.h>
+#include <MenuBar.h>
+#include <SupportDefs.h>
+#include <TextControl.h>
+#include <View.h>
 
 const int32 MSG_DEFAULTS = 0xA1;
 const int32 MSG_REVERT	 = 0xA2;
@@ -32,7 +33,5 @@ private:
 			BButton*		fDefaultsButton;
 			BButton*		fRevertButton;
 };
-
-
 
 #endif

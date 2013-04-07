@@ -6,28 +6,30 @@
  * Authors:
  *		Davide Gessa, dak.linux@gmail.com
  */
-#ifndef BETICK_APP_H
-#define BETICK_APP_H
+#ifndef CRONO_APP_H
+#define CRONO_APP_H
 
 #include <Application.h>
 #include <GroupLayout.h>
 #include <Window.h>
 #include <View.h>
+
+#include "CronoWindow.h"
+#include "Core.h"
+
 #include <stdio.h>
 #include <time.h>
-#include "TickWindow.h"
-#include "TickCore.h"
 
 /**
  * The Application
  */
-class TickApp : public BApplication {
+class App : public BApplication {
 public:
-							TickApp();
+							App();
 	virtual void			MessageReceived(BMessage* mesage);
 		
 private:
-			TickWindow 		*fWindow;
+			CronoWindow 	*fWindow;
 };
 
 #endif

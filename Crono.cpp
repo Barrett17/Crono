@@ -6,15 +6,14 @@
  * Authors:
  *		Davide Gessa, dak.linux@gmail.com
  */
-#include "TickApp.h"
+#include "App.h"
 
 int 
 main()
 {
-	TickApp *cronoApp = new TickApp();
+	App *cronoApp = new App();
 	
 	cronoApp->Run();
 	
 	delete cronoApp;	
 }
-

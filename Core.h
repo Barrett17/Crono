@@ -4,13 +4,15 @@
  * Distributed under the terms of the MIT License for non commercial use.
  *
  * Authors:
- *		Davide Gessa, dak.linux@gmail.com
+ *		Dario Casalinuovo, b.vitruvio@gmail.com
  */
-#ifndef BETICK_CORE_H
-#define BETICK_CORE_H
+#ifndef CRONO_CORE_H
+#define CRONO_CORE_H
 
-class TickProducer;
-class BMediaRoster;
+#include <MediaFile.h>
+#include <MediaTrack.h>
+#include <SoundPlayer.h>
+#include <SupportDefs.h>
 
 const int32		DEFAULT_SPEED	=	60;
 const int32		DEFAULT_VOLUME	=	80;
@@ -18,35 +20,36 @@ const int32		DEFAULT_VOLUME	=	80;
 /**
  * Il core dell'applicazione
  */
-class TickCore {
+class Core {
 public:
-						TickCore();
-						~TickCore();
+						Core();
+						~Core();
 
-	status_t			InitCheck();
-	status_t			Connect();
-	status_t			Disconnect();
-	void 				Stop();
-	void 				Start();
+			status_t	InitCheck();
 
-	void 				SetSpeed(int32 speed);
-	void 				SetMeter(int32 meter);
-	void 				SetVolume(int32 volume);
+			status_t 	LoadTicks();
+			status_t 	UnloadTicks();
+
+			void 		Stop();
+			void 		Start();
+
+			void 		SetSpeed(int32 speed);
+			void 		SetMeter(int32 meter);
+			void 		SetVolume(int32 volume);
 	
-	int32 				Speed();
-	int32 				Meter();
-	int32 				Volume();
+			int32		Speed();
+			int32 		Meter();
+			int32 		Volume();
 
+	static	void		PlayBuffer(void* cookie, void* buffer, size_t size,
+							const media_raw_audio_format& format);
 private:
+	status_t			fErr;
+
 	int32 				fSpeed;
 	int32 				fMeter;
 	int32				fVolume;
 	bool 				fRunning;
-
-	status_t			fErr;
-	BMediaRoster* 		fMediaRoster;
-	TickProducer*		fTickProducer;
 };
-
 
 #endif

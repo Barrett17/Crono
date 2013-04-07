@@ -5,48 +5,46 @@
  *
  * Authors:
  *		Davide Gessa, dak.linux@gmail.com
- *		Barrett, barrett666@gmail.com
+ *		Barrett, b.vitruvio@gmail.com
  */
+#include "CronoWindow.h"
 
-#include <Application.h>
 #include <GroupLayout.h>
 #include <Window.h>
-#include <View.h>
-#include <Shelf.h>
-#include "TickApp.h"
-#include "TickCore.h"
 
-TickWindow::TickWindow(BRect frame) 
+#include "App.h"
+#include "Core.h"
+
+
+CronoWindow::CronoWindow(BRect frame) 
 		:
-		BWindow(frame, "BeTick", B_TITLED_WINDOW,
+		BWindow(frame, "Crono", B_TITLED_WINDOW,
 					B_NOT_ZOOMABLE)
 {	
 	SetLayout(new BGroupLayout(B_VERTICAL));
-	fTickView = new TickView();
+	fCronoView = new CronoView();
 	
-	GetLayout()->AddView(fTickView);
+	GetLayout()->AddView(fCronoView);
 }
 
 
 void
-TickWindow::MessageReceived(BMessage* message)
+CronoWindow::MessageReceived(BMessage* message)
 {
 	switch (message->what)
 	{
 		default:
-			//fTickView->MessageReceived(message);
 			BWindow::MessageReceived(message);
 	}
-
 }
 
 
 
 bool
-TickWindow::QuitRequested()
+CronoWindow::QuitRequested()
 {
-	fTickView->RemoveSelf();
-	delete fTickView;
+	fCronoView->RemoveSelf();
+	delete fCronoView;
 
 	be_app->PostMessage(B_QUIT_REQUESTED);
 	return true;

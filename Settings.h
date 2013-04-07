@@ -3,10 +3,10 @@
  * Distributed under the terms of the MIT License for non commercial use.
  *
  * Authors:
- *		Dario Casalinuovo, barrett666@gmail.com
+ *		Dario Casalinuovo, b.vitruvio@gmail.com
  */
-#ifndef BETICK_SETTINGS_H
-#define BETICK_SETTINGS_H
+#ifndef CRONO_SETTINGS_H
+#define CRONO_SETTINGS_H
 
 #include <File.h>
 #include <Message.h>

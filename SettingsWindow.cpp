@@ -6,13 +6,13 @@
  * Authors:
  *		Davide Gessa, dak.linux@gmail.com
  */
-#include <Application.h>
+
+#include "SettingsWindow.h"
+
 #include <GroupLayout.h>
 #include <Window.h>
-#include <View.h>
-#include "SettingsWindow.h"
-#include "SettingsView.h"
 
+#include "SettingsView.h"
 
 
 SettingsWindow::SettingsWindow(BRect frame) 
@@ -35,9 +35,7 @@ SettingsWindow::MessageReceived(BMessage* message)
 		default:
 			BWindow::MessageReceived(message);
 	}
-
 }
-
 
 
 bool
@@ -46,4 +44,3 @@ SettingsWindow::QuitRequested()
 	//delete fSettingsView;
 	return true;
 }
-
