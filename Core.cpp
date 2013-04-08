@@ -10,11 +10,12 @@
 
 #include <SoundPlayer.h>
 
-#include <CronoDefaults.h>
+#include "CronoDefaults.h"
 
 static	BSoundPlayer* kPlayer;
 static	BMediaTrack* kTic;
 static	BMediaTrack* kTac;
+
 
 void
 Core::PlayBuffer(void* cookie, void* buffer, size_t size,
@@ -25,15 +26,13 @@ const media_raw_audio_format& format)
 
 	if (frames <=0)
 		kPlayer->SetHasData(false);
+		// error to the user?
 }
 
 
 //Initialize the class with default values
 Core::Core()
 	:
-	fSpeed(DEFAULT_SPEED),
-	fMeter(0),
-	fVolume(DEFAULT_VOLUME),
 	fRunning(false)
 {
 	media_raw_audio_format format;
@@ -110,7 +109,7 @@ void
 Core::SetSpeed(int32 s)
 {
 	if (s <= 500 && s > 1)
-		fSpeed = s;
+		gCronoSettings.Speed = s;
 }
 
 
@@ -118,7 +117,7 @@ void
 Core::SetMeter(int32 m)
 {
 	if (m < 10 && m >= 0)
-		fMeter = m;
+		gCronoSettings.Meter = m;
 }
 
 
@@ -126,26 +125,26 @@ void
 Core::SetVolume(int32 v)
 {
 	if (v <= 100 && v >= 0)
-		fVolume = v;
+		gCronoSettings.CronoVolume = v;
 }
 
 
 int32 
 Core::Volume()
 {
-	return fVolume;	
+	return gCronoSettings.CronoVolume;	
 }
 
 
 int32
 Core::Speed()
 {
-	return fSpeed;	
+	return gCronoSettings.Speed;	
 }
 
 
 int32
 Core::Meter()
 {
-	return fMeter;	
+	return gCronoSettings.Meter;	
 }

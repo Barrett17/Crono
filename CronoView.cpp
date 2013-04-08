@@ -43,9 +43,6 @@ CronoView::CronoView()
 
 	// Core
 	fCore = new Core();
-	fCore->SetVolume(80);
-	fCore->SetSpeed(60);
-
 
 	// Menu bar
 	fMenuBar = new BMenuBar("MenuBar");
@@ -78,7 +75,6 @@ CronoView::CronoView()
 	fVolumeSlider->SetHashMarkCount(10);
 	fVolumeSlider->SetBarColor(barColor);
 	fVolumeSlider->SetValue(fCore->Volume());
-	//fVolumeSlider->SetPosition(((float) DEFAULT_VOLUME) / 100.0);
 	fVolumeSlider->UseFillColor(true, &fillColor);
 	
 	volLayout->AddView(fVolumeSlider);
@@ -122,28 +118,28 @@ CronoView::CronoView()
 	BGroupLayout* meterLayout = new BGroupLayout(B_HORIZONTAL);
 	meterLayout->SetInsets(10, meterBox->TopBorderOffset() * 2 + 10, 10, 10);
 	meterBox->SetLayout(meterLayout);
-	
+
 	for(int i = 0; i < 5; i++)
 		fMeterRadios[i] = new BRadioButton("", "", new BMessage(MSG_METER_RADIO));
-		
+
 	fMeterRadios[0]->SetLabel("1/4");
 	fMeterRadios[1]->SetLabel("2/4");
 	fMeterRadios[2]->SetLabel("3/4");
 	fMeterRadios[3]->SetLabel("4/4");
 	fMeterRadios[3]->SetValue(1);
 	fMeterRadios[4]->SetLabel("Other");
-			
+
 	fMeterEntry = new BTextControl("", "", "4",
 		new BMessage(MSG_METER_ENTRY), B_WILL_DRAW);
 
 	fMeterEntry->SetDivider(70);
 	fMeterEntry->SetEnabled(false);
-		
+
 	for(int i= 0; i < 5; i++)
 		meterLayout->AddView(fMeterRadios[i]);
 	meterLayout->AddView(fMeterEntry);
 	rootLayout->AddView(meterBox);
-	
+
 
 	// Start and stop button	
 	BGroupView* buttonGroup = new BGroupView(B_HORIZONTAL);
@@ -226,9 +222,6 @@ CronoView::MessageReceived(BMessage *message)
 	
 			settWindow = new SettingsWindow(windowRect);
 			settWindow->Show();
-			//delete settWindow;
-			
-			// CHIARO? @_@!!! Chiarissimo v_v
 			break;
 		}
 

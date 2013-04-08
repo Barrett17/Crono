@@ -44,9 +44,6 @@ public:
 private:
 	status_t			fErr;
 
-	int32 				fSpeed;
-	int32 				fMeter;
-	int32				fVolume;
 	bool 				fRunning;
 };
 

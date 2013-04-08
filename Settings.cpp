@@ -7,25 +7,39 @@
  */
 #include "Settings.h"
 
+#include <Entry.h>
+#include <FindDirectory.h>
+#include <new>
+
 #include <stdio.h>
 
-#include <Entry.h>
-#include <new>
+#include "CronoDefaults.h"
 
 const uint32 kMsgSettings = 'stng';
 
-Settings::Settings(BPath path)
+Settings gCronoSettings;
+
+
+Settings::Settings()
 	:
-	BMessage(kMsgSettings), fSettingsPath(path)
+	BMessage(kMsgSettings)
 {
-	fSettingsFile = new(std :: nothrow) BFile(path.Path(),
-		B_READ_WRITE | B_CREATE_FILE);
+	status_t result = find_directory(B_USER_SETTINGS_DIRECTORY, &fSettingsPath);
+	if (result == B_OK) {
+		fSettingsPath.Append(CRONO_SETTINGS_LOCATION);
+		fSettingsFile = new(std :: nothrow) BFile(fSettingsPath.Path(),
+			B_READ_WRITE | B_CREATE_FILE);
+	} else {
+		printf("Error with settings\n");
+		// BAlert ERROR!
+	}
+	OpenSettings();
 }
 
 
 Settings::~Settings()
 {
-	fSettingsFile.Close()
+	FlattenSettings();
 	delete fSettingsFile;
 }
 
@@ -33,6 +47,7 @@ Settings::~Settings()
 status_t
 Settings::OpenSettings()
 {
+	printf("open\n");
 	status_t ret = fSettingsFile->InitCheck();
 
 	if (ret < B_OK) {
@@ -44,10 +59,45 @@ Settings::OpenSettings()
 
 	if (ret < B_OK) {
 		printf("Settings: unflatten error %s\n", strerror(ret));
+		// it seems the file is empty or corrupt, go with default values.
+		Speed = DEFAULT_SPEED;
+		Meter = DEFAULT_METER;
+		CronoVolume = DEFAULT_VOLUME;
+		TicLocation = CRONO_TIC_LOCATION;
+		TocLocation = CRONO_TOC_LOCATION;
 		return ret;
 	}
 
+	_SetTo();
 	return B_OK;	
+}
+
+
+status_t
+Settings::DeleteSettings()
+{
+	delete fSettingsFile;
+	BEntry* entry = new BEntry(fSettingsPath.Path(), false);
+	printf("Settings::DeleteSettings() the entry is %s\n",
+		fSettingsPath.Path());
+
+	status_t ret = entry->Remove();
+	if (ret < B_OK)
+		return ret;
+
+	delete entry;
+	return B_OK;
+}
+
+
+status_t
+Settings::FlattenSettings()
+{
+	printf("flatten\n");
+	_CheckSettings();
+
+	fSettingsFile->Seek(0, SEEK_SET);
+	return Flatten(fSettingsFile);
 }
 
 
@@ -58,7 +108,7 @@ Settings::ReadSetting(const char* name, BString* string)
 	
 	status_t ret = FindString(name, &setting);
 	
-	if(ret < B_OK) {
+	if (ret < B_OK) {
 		return ret;
 	} else {
 		string->SetTo(setting);
@@ -130,26 +180,25 @@ Settings::RemoveSetting(const char* name)
 }
 
 
-status_t
-Settings::DeleteSettings()
+void
+Settings::_CheckSettings()
 {
-	delete fSettingsFile;
-	BEntry* entry = new BEntry(fSettingsPath.Path(), false);
-	printf("Settings::DeleteSettings() the entry is %s\n",
-		fSettingsPath.Path());
+	MakeEmpty();
 
-	status_t ret = entry->Remove();
-	if (ret < B_OK)
-		return ret;
-
-	delete entry;
-	return B_OK;
+	WriteSetting("TICLOC", TicLocation);
+	WriteSetting("TOCLOC", TocLocation);
+	WriteSetting("SPEED", Speed);
+	WriteSetting("METER", Meter);
+	WriteSetting("VOLUME", CronoVolume);
 }
 
 
-status_t
-Settings::FlattenSettings()
+void
+Settings::_SetTo()
 {
-	fSettingsFile->Seek(0, SEEK_SET);
-	return Flatten(fSettingsFile);
+	ReadSetting("TICLOC", &TicLocation);
+	ReadSetting("TOCLOC", &TocLocation);
+	ReadSetting("SPEED", &Speed);
+	ReadSetting("METER", &Meter);
+	ReadSetting("VOLUME", &CronoVolume);
 }

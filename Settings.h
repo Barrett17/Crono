@@ -13,12 +13,25 @@
 #include <Path.h>
 #include <String.h>
 
+
 class Settings : public BMessage {
 public:
-						Settings(BPath path);
+						Settings();
 virtual					~Settings();
 
 		status_t		OpenSettings();
+
+		status_t		FlattenSettings();
+		
+		status_t		DeleteSettings();
+
+		BString			TicLocation;
+		BString			TocLocation;
+		int32 			Speed;
+		int32 			Meter;
+		int32			CronoVolume;
+
+protected:
 
 		status_t		ReadSetting(const char* name, BString* string);
 		status_t		ReadSetting(const char* name, int32* setting);
@@ -34,12 +47,15 @@ virtual					~Settings();
 
 		status_t		RemoveSetting(const char* name);
 
-		status_t		FlattenSettings();
-		
-		status_t		DeleteSettings();
-protected:
+private:
+		void			_CheckSettings();
+		void			_SetTo();
 		BFile*			fSettingsFile;
 		BPath			fSettingsPath;
+
+		int32			fControl;
 }; 
+
+extern Settings gCronoSettings;
 
 #endif /* SETTINGS_H */
