@@ -38,13 +38,13 @@ SettingsView::SettingsView()
 	audioLayout->SetInsets(10, audioBox->TopBorderOffset() * 2 + 10, 10, 10);
 	audioBox->SetLayout(audioLayout);
 	
-	fTocSoundEntry = new BTextControl("Toc", "Toc", CRONO_TOC_LOCATION,
+	fTocSoundEntry = new BTextControl("Toc", "Toc", gCronoSettings.TocLocation,
 		new BMessage(MSG_SET), B_WILL_DRAW);
 
 	fTocSoundEntry->SetDivider(70);
 	fTocSoundEntry->SetAlignment(B_ALIGN_CENTER, B_ALIGN_CENTER);
 		
-	fTicSoundEntry = new BTextControl("Tic", "Tic", CRONO_TIC_LOCATION", 
+	fTicSoundEntry = new BTextControl("Tic", "Tic", gCronoSettings.TicLocation, 
 		new BMessage(MSG_SET), B_WILL_DRAW);
 
 	fTicSoundEntry->SetDivider(70);
@@ -100,8 +100,12 @@ SettingsView::MessageReceived(BMessage *message)
 
 		case MSG_SET:
 		{
-		
+			gCronoSettings.TicLocation.SetTo(
+				fTicSoundEntry->Text());
+			gCronoSettings.TocLocation.SetTo(
+				fTocSoundEntry->Text());
 		}
+		break;
 
 		default:
 			BView::MessageReceived(message);

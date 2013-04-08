@@ -148,7 +148,7 @@ void
 Core::SetSpeed(int32 s)
 {
 	if (s <= 500 && s > 1)
-		fSpeed = s;
+		gCronoSettings.Speed = s;
 }
 
 

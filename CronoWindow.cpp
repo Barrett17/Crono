@@ -13,17 +13,16 @@
 #include <Window.h>
 
 #include "App.h"
-#include "Core.h"
 
 
 CronoWindow::CronoWindow(BRect frame) 
-		:
-		BWindow(frame, "Crono", B_TITLED_WINDOW,
-					B_NOT_ZOOMABLE)
-{	
+	:
+	BWindow(frame, "Crono", B_TITLED_WINDOW,
+		B_NOT_ZOOMABLE)
+{
 	SetLayout(new BGroupLayout(B_VERTICAL));
 	fCronoView = new CronoView();
-	
+
 	GetLayout()->AddView(fCronoView);
 }
 
