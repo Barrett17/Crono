@@ -2,9 +2,9 @@
 resource app_signature "application/x-vnd.Haiku-Crono";
 
 resource app_version {
-	major  = 1,
+	major  = 0,
 	middle = 0,
-	minor  = 0,
+	minor  = 3,
 
 	variety = B_APPV_BETA,
 
