@@ -15,11 +15,7 @@
 #include <CheckBox.h>
 #include <LayoutBuilder.h>
 
-
-SettingsView::~SettingsView()
-{
-
-}
+#include "CronoDefaults.h"
 
 
 SettingsView::SettingsView()
@@ -41,14 +37,14 @@ SettingsView::SettingsView()
 	audioLayout->SetInsets(10, audioBox->TopBorderOffset() * 2 + 10, 10, 10);
 	audioBox->SetLayout(audioLayout);
 	
-	fTocSoundEntry = new BTextControl("Toc", "Toc", "audio/toc.wav",
-		new BMessage(MSG_DEFAULTS), B_WILL_DRAW);
+	fTocSoundEntry = new BTextControl("Toc", "Toc", CRONO_TOC_LOCATION,
+		new BMessage(MSG_SET), B_WILL_DRAW);
 
 	fTocSoundEntry->SetDivider(70);
 	fTocSoundEntry->SetAlignment(B_ALIGN_CENTER, B_ALIGN_CENTER);
 		
-	fTicSoundEntry = new BTextControl("Tic", "Tic", "audio/tic.wav", 
-		new BMessage(MSG_DEFAULTS), B_WILL_DRAW);
+	fTicSoundEntry = new BTextControl("Tic", "Tic", CRONO_TIC_LOCATION", 
+		new BMessage(MSG_SET), B_WILL_DRAW);
 
 	fTicSoundEntry->SetDivider(70);
 	fTicSoundEntry->SetAlignment(B_ALIGN_CENTER, B_ALIGN_CENTER);
@@ -70,6 +66,12 @@ SettingsView::SettingsView()
 	rootLayout->AddView(buttonGroup);
 }
 
+
+SettingsView::~SettingsView()
+{
+}
+
+
 void
 SettingsView::AttachedToWindow()
 {
@@ -89,6 +91,17 @@ SettingsView::MessageReceived(BMessage *message)
 	{
 		case MSG_REVERT:
 		case MSG_DEFAULTS:
+		{
+			fTocSoundEntry->SetText(CRONO_TOC_LOCATION);
+			fTicSoundEntry->SetText(CRONO_TIC_LOCATION);
+		}
+		break;
+
+		case MSG_SET:
+		{
+		
+		}
+
 		default:
 			BView::MessageReceived(message);
 	}			

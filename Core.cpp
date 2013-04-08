@@ -10,6 +10,7 @@
 
 #include <SoundPlayer.h>
 
+#include <CronoDefaults.h>
 
 static	BSoundPlayer* kPlayer;
 static	BMediaTrack* kTic;

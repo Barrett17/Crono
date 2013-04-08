@@ -25,7 +25,8 @@ Settings::Settings(BPath path)
 
 Settings::~Settings()
 {
-
+	fSettingsFile.Close()
+	delete fSettingsFile;
 }
 
 

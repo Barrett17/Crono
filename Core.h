@@ -14,8 +14,6 @@
 #include <SoundPlayer.h>
 #include <SupportDefs.h>
 
-const int32		DEFAULT_SPEED	=	60;
-const int32		DEFAULT_VOLUME	=	80;
 
 /**
  * Il core dell'applicazione

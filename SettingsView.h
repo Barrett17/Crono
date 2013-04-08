@@ -18,6 +18,7 @@
 
 const int32 MSG_DEFAULTS = 0xA1;
 const int32 MSG_REVERT	 = 0xA2;
+const int32 MSG_SET		 = 0xA3;
 
 
 class SettingsView : public BView {
