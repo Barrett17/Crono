@@ -262,15 +262,14 @@ CronoView::MessageReceived(BMessage *message)
 			int selected = 0;
 			
 			// Get the selected radiobutton
-			for(int i = 0; i < 5; i++)
-				if(fMeterRadios[i]->Value())
+			for (int i = 0; i < 5; i++)
+				if (fMeterRadios[i]->Value())
 					selected = i;
 			
 			// If "Other" is selected, enable the fMeterEntry
-			if(selected == 4)
+			if (selected == 4) {
 				fMeterEntry->SetEnabled(true);
-			else
-			{
+			} else {
 				fMeterEntry->SetEnabled(false);
 				fCore->SetMeter(((int) selected + 1));
 			}
@@ -290,13 +289,10 @@ CronoView::MessageReceived(BMessage *message)
 		{
 			unsigned bpm = abs(atoi(fSpeedEntry->Text()));
 			
-			if(bpm > 500)
-			{
+			if (bpm > 500) {
 				fSpeedEntry->SetText("500");
 				bpm = 500;
-			}
-			else if(bpm == 0)
-			{
+			} else if(bpm == 0) {
 				fSpeedEntry->SetText("1");
 				bpm = 1;
 			}
@@ -312,7 +308,7 @@ CronoView::MessageReceived(BMessage *message)
 		{
 			float v = fSpeedSlider->Value();
 			
-			if(v == 0)
+			if (v == 0)
 				v = 1;
 				
 			char strv[32];
