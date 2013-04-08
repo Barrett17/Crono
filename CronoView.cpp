@@ -22,6 +22,7 @@
 
 #include "App.h"
 #include "Core.h"
+#include "CronoDefaults.h"
 #include "SettingsWindow.h"
 
 #include <math.h>
@@ -89,9 +90,11 @@ CronoView::CronoView()
 	speedBox->SetLayout(speedLayout);
 	
 	fSpeedSlider = new BSlider("", "",
-		new BMessage(MSG_SPEED_SLIDER), 1, 300, B_HORIZONTAL);
+		new BMessage(MSG_SPEED_SLIDER), MIN_SPEED, MAX_SPEED, B_HORIZONTAL);
 
-	fSpeedSlider->SetLimitLabels("1", "300");
+	fSpeedSlider->SetLimitLabels(BString() << MIN_SPEED,
+		BString() << MAX_SPEED);
+
 	fSpeedSlider->SetKeyIncrementValue(5);
 	fSpeedSlider->SetHashMarks(B_HASH_MARKS_BOTTOM);
 	fSpeedSlider->SetHashMarkCount(10);
@@ -100,12 +103,12 @@ CronoView::CronoView()
 	fSpeedSlider->UseFillColor(true, &fillColor);
 	
 	
-	fSpeedEntry = new BTextControl("", "", "60",
+	fSpeedEntry = new BTextControl("", "", BString() << gCronoSettings.Speed,
 		new BMessage(MSG_SPEED_ENTRY), B_WILL_DRAW);
 
 	fSpeedEntry->SetDivider(70);
 	fSpeedEntry->SetAlignment(B_ALIGN_CENTER, B_ALIGN_CENTER);
-//	fSpeedEntry->SetExplicitMaxSize(BSize(1, 1));
+	fSpeedEntry->SetExplicitSize(BSize(35, 20));
 	
 	speedLayout->AddView(fSpeedSlider);
 	speedLayout->AddView(fSpeedEntry);
@@ -229,7 +232,10 @@ CronoView::MessageReceived(BMessage *message)
 		{
 			printf("Start\n");
 			fCore->Start();
+			fStartButton->SetEnabled(false);
+			fStopButton->SetEnabled(true);
 			fStopButton->MakeDefault(true);
+			fEditMenu->FindItem(MSG_SETTINGS)->SetEnabled(false);
 			break;
 		}
 	
@@ -237,7 +243,10 @@ CronoView::MessageReceived(BMessage *message)
 		{
 			printf("Stop\n");
 			fCore->Stop();
+			fStopButton->SetEnabled(false);
+			fStartButton->SetEnabled(true);
 			fStartButton->MakeDefault(true);
+			fEditMenu->FindItem(MSG_SETTINGS)->SetEnabled(true);
 			break;
 		}
 

@@ -17,7 +17,7 @@
 
 SettingsWindow::SettingsWindow(BRect frame) 
 	:
-	BWindow(frame, "BeTick Settings", B_TITLED_WINDOW,
+	BWindow(frame, "Settings", B_TITLED_WINDOW,
 		B_NOT_ZOOMABLE)
 {	
 	SetLayout(new BGroupLayout(B_VERTICAL));
@@ -41,6 +41,5 @@ SettingsWindow::MessageReceived(BMessage* message)
 bool
 SettingsWindow::QuitRequested()
 {
-	//delete fSettingsView;
 	return true;
 }

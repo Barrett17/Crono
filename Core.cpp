@@ -12,21 +12,31 @@
 
 #include "CronoDefaults.h"
 
-static	BSoundPlayer* kPlayer;
-static	BMediaTrack* kTic;
-static	BMediaTrack* kTac;
+#include <stdio.h>
+
+BSoundPlayer* kPlayer = NULL;
+
+BMediaFile* kTicFile = NULL;
+BMediaFile* kTocFile = NULL;
+
+BMediaTrack* kTic = NULL;
+BMediaTrack* kToc = NULL;
 
 
 void
 Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 const media_raw_audio_format& format)
 {
+	printf("playing\n");
 	int64 frames = 0;
-	//fPlayTrack->ReadFrames(buffer, &frames);
+	kTic->ReadFrames(buffer, &frames);
 
-	if (frames <=0)
-		kPlayer->SetHasData(false);
-		// error to the user?
+	char* buf = (char*)buffer;
+
+	if (frames <= 0) {
+		//kPlayer->SetHasData(false);
+		kTic->SeekToTime(0);
+	}
 }
 
 
@@ -35,17 +45,21 @@ Core::Core()
 	:
 	fRunning(false)
 {
-	media_raw_audio_format format;
-	format = media_raw_audio_format::wildcard;
-	format.format = media_raw_audio_format::B_AUDIO_FLOAT;
-	format.byte_order = B_MEDIA_LITTLE_ENDIAN;
-
-	kPlayer = new BSoundPlayer(&format, 
-		"CronoPlayback", PlayBuffer);
-
 	LoadTicks();
 
-	kPlayer->SetHasData(true);
+	media_format fileFormat;
+	fileFormat.type = B_MEDIA_RAW_AUDIO;
+
+	if (kTic->DecodedFormat(&fileFormat) == B_OK
+			&& fileFormat.type == B_MEDIA_RAW_AUDIO) {
+
+		kPlayer = new BSoundPlayer(&fileFormat.u.raw_audio, 
+			"CronoPlayback", PlayBuffer);
+
+		kPlayer->SetHasData(true);
+	} else {
+		// Alert
+	}
 }
 
 
@@ -69,8 +83,25 @@ Core::InitCheck()
 status_t
 Core::LoadTicks() 
 {
+	if (kTicFile != NULL && kTocFile != NULL)
+		UnloadTicks();
+ 
+	kTicFile = new BMediaFile(
+		new BFile(gCronoSettings.TicLocation, B_READ_ONLY));
 
-	return B_ERROR;
+	if (kTicFile->InitCheck() != B_OK)
+		printf("Error initializing the first File.");
+
+	kTocFile = new BMediaFile(
+		new BFile(gCronoSettings.TocLocation, B_READ_ONLY));
+
+	if (kTocFile->InitCheck() != B_OK)
+		printf("Error initializing the second File.");
+
+	kTic = kTicFile->TrackAt(0);
+	kToc = kTocFile->TrackAt(0);
+
+	return B_OK;
 }
 
 
@@ -78,6 +109,14 @@ Core::LoadTicks()
 status_t
 Core::UnloadTicks() 
 {
+	kTicFile->ReleaseAllTracks();
+	kTocFile->ReleaseAllTracks();
+
+	delete kTicFile;
+	delete kTocFile;
+
+	kTicFile = NULL;
+	kTocFile = NULL;
 
 	return B_ERROR;
 }
@@ -109,7 +148,7 @@ void
 Core::SetSpeed(int32 s)
 {
 	if (s <= 500 && s > 1)
-		gCronoSettings.Speed = s;
+		fSpeed = s;
 }
 
 
@@ -124,6 +163,7 @@ Core::SetMeter(int32 m)
 void 
 Core::SetVolume(int32 v)
 {
+	// TODO modify as needed to use BSoundPlayer::SetVolume(float)
 	if (v <= 100 && v >= 0)
 		gCronoSettings.CronoVolume = v;
 }

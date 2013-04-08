@@ -3,6 +3,9 @@
 
 #include "Settings.h"
 
+#define MIN_SPEED 30
+#define MAX_SPEED 299
+
 const int32	DEFAULT_SPEED	= 60;
 const int32	DEFAULT_VOLUME	= 80;
 const int32	DEFAULT_METER	= 0;
