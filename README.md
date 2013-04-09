@@ -1,7 +1,7 @@
-=== Crono v0.0.3 ===
+* Crono v0.0.3
 
 Crono, previously known as BeTick is a native metronome for Haiku.
-It's currently in development state.
+It's currently in pre-alpha state.
 
 Manager(s) :
 Casalinuovo Dario, b.vitruvio@gmail.com
@@ -9,13 +9,18 @@ Casalinuovo Dario, b.vitruvio@gmail.com
 Developer(s) :
 Davide Gessa, dak.linux@gmail.com
 
-=== Project Page ===
+Icon from ZuMi (http://zumi.xoom.it/myhaiku/)
+
+* Project Page
 
 https://github.com/Barrett17/Crono
 
-=== How to compile the sources ===
+* Build and Install
 
-We use a simple Jamfile to compile the project so open a Terminal
-on the sources directory and type :
+Open a Terminal in the sources directory and type :
+
+$ ./configure
 
 $ jam
+
+$ jam install
