@@ -8,6 +8,7 @@
  */
 #include "Core.h"
 
+#include <BufferGroup.h>
 #include <SoundPlayer.h>
 
 #include "CronoDefaults.h"
@@ -22,22 +23,38 @@ BMediaFile* kTocFile = NULL;
 BMediaTrack* kTic = NULL;
 BMediaTrack* kToc = NULL;
 
+BBufferGroup *kBuffers = new BBufferGroup;
 
 void
 Core::PlayBuffer(void* cookie, void* buffer, size_t size,
-const media_raw_audio_format& format)
+	const media_raw_audio_format& format)
 {
 	printf("playing\n");
-	int64 frames = 0;
-	kTic->ReadFrames(buffer, &frames);
 
-	if (frames <= 0) {
+	_NextBuffer(buffer, size, format);
+
+	//int64 
+}
+
+
+void
+Core::_PrepareBuffers()
+{
+}
+
+
+void
+Core::_NextBuffer(void* buffer, size_t size,
+	const media_raw_audio_format& format)
+{
+	//int64 frames = 0;
+	//kTic->ReadFrames(buffer, &frames);
+
+	//if (frames <= 0) {
 		memset(buffer, 0, size);
 		//kPlayer->SetHasData(false);
-		//kTic->SeekToTime(0);
-	}
-	
-	//int64 
+	//	kTic->SeekToTime(0);
+//	}
 }
 
 
@@ -98,6 +115,9 @@ Core::LoadTicks()
 	if (kTic != NULL && kTic->DecodedFormat(&fileFormat) == B_OK
 			&& fileFormat.type == B_MEDIA_RAW_AUDIO) {
 
+		if (kPlayer != NULL)
+			delete kPlayer;
+
 		kPlayer = new BSoundPlayer(&fileFormat.u.raw_audio, 
 			"CronoPlayback", PlayBuffer);
 
@@ -139,12 +159,12 @@ void
 Core::Start()
 {
 	if (!fRunning) {
-		fRunning = true;
 		if (gCronoSettings.LocationsChanged())
 			if (LoadTicks() != B_OK) {
 				printf("Unable to start!");
 				return;
 			}
+		fRunning = true;
 		kPlayer->Start();
 	}
 }

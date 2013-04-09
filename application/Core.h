@@ -42,9 +42,13 @@ public:
 	static	void		PlayBuffer(void* cookie, void* buffer, size_t size,
 							const media_raw_audio_format& format);
 private:
-	status_t			fErr;
+	static	void		_PrepareBuffers();
+	static	void		_NextBuffer(void* buffer, size_t size,
+							const media_raw_audio_format& format);
+	
+			status_t	fErr;
 
-	bool 				fRunning;
+			bool 		fRunning;
 };
 
 #endif

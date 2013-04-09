@@ -9,7 +9,7 @@ Casalinuovo Dario, b.vitruvio@gmail.com
 Developer(s) :
 Davide Gessa, dak.linux@gmail.com
 
-Icon from ZuMi (http://zumi.xoom.it/myhaiku/)
+Icon based on the ZuMi's schedule_r2.hvif (http://zumi.xoom.it/myhaiku/)
 
 * Project Page
 
