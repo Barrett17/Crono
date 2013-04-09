@@ -8,6 +8,9 @@
   , in 3/4  tre  e così via, quindi selezionando uno o più checkbox l'accento verrà 
   eseguito sulla battuta selezionata. 
 
+* Create format for soundpacks, it cpuld be simply a text file
+  that defines pairs of sounds.
+
 * Creare la lancetta del metronomo che oscilla con le misure sotto.
 
 * Make it replicantable (if possible).
