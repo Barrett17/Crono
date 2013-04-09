@@ -1,0 +1,4 @@
+SubDir TOP audio ;
+
+InstallFile $(CRONO_DIRECTORY)/audio : tic.wav ;
+InstallFile $(CRONO_DIRECTORY)/audio : toc.wav ;

@@ -1,0 +1,19 @@
+SubDir TOP application ;
+
+SubDirSysHdrs [ FDirName $(TOP) ] ;
+
+SEARCH_SOURCE += [ FDirName $(TOP) application ] ;
+
+Application Crono :
+	Crono.cpp
+	App.cpp Core.cpp
+	CronoView.cpp
+	CronoWindow.cpp
+	Settings.cpp
+	SettingsView.cpp
+	SettingsWindow.cpp
+	: be media $(TARGET_LIBSTDC++)
+	: Crono.rdef
+;
+
+InstallBin $(CRONO_DIRECTORY) : Crono ;
