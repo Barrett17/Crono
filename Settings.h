@@ -25,8 +25,11 @@ virtual					~Settings();
 		
 		status_t		DeleteSettings();
 
+		bool			LocationsChanged();
+
 		BString			TicLocation;
 		BString			TocLocation;
+
 		int32 			Speed;
 		int32 			Meter;
 		int32			CronoVolume;
@@ -48,6 +51,12 @@ protected:
 		status_t		RemoveSetting(const char* name);
 
 private:
+		// Well, probably in future there will be need of a better
+		// undo mechanism, for now it's ok, but if you want, 
+		// feel free to submit a patch ; )
+		const char*		fTicLocationUndo;
+		const char*		fTocLocationUndo;
+
 		void			_CheckSettings();
 		void			_SetTo();
 		BFile*			fSettingsFile;

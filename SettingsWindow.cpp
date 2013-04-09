@@ -37,6 +37,13 @@ SettingsWindow::MessageReceived(BMessage* message)
 	}
 }
 
+/*
+void
+SettingsWindow::Quit()
+{
+
+}*/
+
 
 bool
 SettingsWindow::QuitRequested()

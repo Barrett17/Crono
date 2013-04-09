@@ -29,6 +29,8 @@ public:
 	virtual	void			MessageReceived(BMessage* message);
 
 private:
+			void			_UpdateData();
+
 			BTextControl*	fTicSoundEntry;
 			BTextControl*	fTocSoundEntry;
 			BButton*		fDefaultsButton;

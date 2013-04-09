@@ -70,6 +70,8 @@ SettingsView::SettingsView()
 
 SettingsView::~SettingsView()
 {
+	// Save the data
+	 _UpdateData();
 }
 
 
@@ -99,15 +101,20 @@ SettingsView::MessageReceived(BMessage *message)
 		break;
 
 		case MSG_SET:
-		{
-			gCronoSettings.TicLocation.SetTo(
-				fTicSoundEntry->Text());
-			gCronoSettings.TocLocation.SetTo(
-				fTocSoundEntry->Text());
-		}
+			_UpdateData();
 		break;
 
 		default:
 			BView::MessageReceived(message);
 	}			
+}
+
+
+void
+SettingsView::_UpdateData()
+{
+	gCronoSettings.TicLocation.SetTo(
+		fTicSoundEntry->Text());
+	gCronoSettings.TocLocation.SetTo(
+		fTocSoundEntry->Text());
 }

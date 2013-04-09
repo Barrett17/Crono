@@ -101,6 +101,19 @@ Settings::FlattenSettings()
 }
 
 
+// Used to check if the audio files location has changed.
+bool
+Settings::LocationsChanged()
+{
+	if (TicLocation.ICompare(fTicLocationUndo) != 0)
+		return true;
+	if (TocLocation.ICompare(fTocLocationUndo) != 0)
+		return true;
+
+	return false;
+}
+
+
 status_t
 Settings::ReadSetting(const char* name, BString* string)
 {
@@ -201,4 +214,7 @@ Settings::_SetTo()
 	ReadSetting("SPEED", &Speed);
 	ReadSetting("METER", &Meter);
 	ReadSetting("VOLUME", &CronoVolume);
+
+	fTicLocationUndo = TicLocation.String();
+	fTocLocationUndo = TocLocation.String();
 }

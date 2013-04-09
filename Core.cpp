@@ -31,8 +31,6 @@ const media_raw_audio_format& format)
 	int64 frames = 0;
 	kTic->ReadFrames(buffer, &frames);
 
-	char* buf = (char*)buffer;
-
 	if (frames <= 0) {
 		//kPlayer->SetHasData(false);
 		kTic->SeekToTime(0);
@@ -46,20 +44,6 @@ Core::Core()
 	fRunning(false)
 {
 	LoadTicks();
-
-	media_format fileFormat;
-	fileFormat.type = B_MEDIA_RAW_AUDIO;
-
-	if (kTic->DecodedFormat(&fileFormat) == B_OK
-			&& fileFormat.type == B_MEDIA_RAW_AUDIO) {
-
-		kPlayer = new BSoundPlayer(&fileFormat.u.raw_audio, 
-			"CronoPlayback", PlayBuffer);
-
-		kPlayer->SetHasData(true);
-	} else {
-		// Alert
-	}
 }
 
 
@@ -89,17 +73,36 @@ Core::LoadTicks()
 	kTicFile = new BMediaFile(
 		new BFile(gCronoSettings.TicLocation, B_READ_ONLY));
 
-	if (kTicFile->InitCheck() != B_OK)
+	if (kTicFile->InitCheck() != B_OK) {
 		printf("Error initializing the first File.");
+		return B_ERROR;
+	}
 
 	kTocFile = new BMediaFile(
 		new BFile(gCronoSettings.TocLocation, B_READ_ONLY));
 
-	if (kTocFile->InitCheck() != B_OK)
+	if (kTocFile->InitCheck() != B_OK) {
 		printf("Error initializing the second File.");
+		return B_ERROR;
+	}
 
 	kTic = kTicFile->TrackAt(0);
 	kToc = kTocFile->TrackAt(0);
+
+	media_format fileFormat;
+	fileFormat.type = B_MEDIA_RAW_AUDIO;
+
+	if (kTic != NULL && kTic->DecodedFormat(&fileFormat) == B_OK
+			&& fileFormat.type == B_MEDIA_RAW_AUDIO) {
+
+		kPlayer = new BSoundPlayer(&fileFormat.u.raw_audio, 
+			"CronoPlayback", PlayBuffer);
+
+		kPlayer->SetHasData(true);
+	} else {
+		// Alert
+		return B_ERROR;
+	}
 
 	return B_OK;
 }
@@ -109,8 +112,11 @@ Core::LoadTicks()
 status_t
 Core::UnloadTicks() 
 {
-	kTicFile->ReleaseAllTracks();
-	kTocFile->ReleaseAllTracks();
+	if (kTicFile != NULL && kTicFile->InitCheck() == B_OK)
+		kTicFile->ReleaseAllTracks();
+
+	if (kTocFile != NULL && kTocFile->InitCheck() == B_OK)
+		kTocFile->ReleaseAllTracks();
 
 	delete kTicFile;
 	delete kTocFile;
@@ -118,7 +124,10 @@ Core::UnloadTicks()
 	kTicFile = NULL;
 	kTocFile = NULL;
 
-	return B_ERROR;
+	kTic = NULL;
+	kToc = NULL;
+
+	return B_OK;
 }
 
 
@@ -128,6 +137,11 @@ Core::Start()
 {
 	if (!fRunning) {
 		fRunning = true;
+		if (gCronoSettings.LocationsChanged())
+			if (LoadTicks() != B_OK) {
+				printf("Unable to start!");
+				return;
+			}
 		kPlayer->Start();
 	}
 }
