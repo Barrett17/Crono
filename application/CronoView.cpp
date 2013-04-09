@@ -206,6 +206,7 @@ CronoView::MessageReceived(BMessage *message)
 			"Copyright ©2009 - 2013 Dario Casalinuovo\n\n"
 			"Copyright ©2009 - 2013 Davide Gessa \n\n"
 			"Crono is a Software Metronome for Haiku "
+			"Crono is part of the StilNovo Media Suite http://www.versut.com/."
 			"Released under MIT license for non commercial use.\n\n"
 			"WARNING - Crono is unstable and unfinished, this is not\n"
 			"the final release! Please submit us bugs and improvements ideas.\n\n"
