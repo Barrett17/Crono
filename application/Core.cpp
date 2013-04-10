@@ -8,6 +8,7 @@
  */
 #include "Core.h"
 
+#include <Buffer.h>
 #include <BufferGroup.h>
 #include <SoundPlayer.h>
 
@@ -23,7 +24,9 @@ BMediaFile* kTocFile = NULL;
 BMediaTrack* kTic = NULL;
 BMediaTrack* kToc = NULL;
 
-BBufferGroup *kBuffers = new BBufferGroup;
+BBufferGroup *kBuffers = NULL;
+
+BBuffer* kLastBuf;
 
 void
 Core::PlayBuffer(void* cookie, void* buffer, size_t size,
@@ -31,8 +34,21 @@ Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 {
 	printf("playing\n");
 
-	_NextBuffer(buffer, size, format);
+	BBuffer* buf = kBuffers->RequestBuffer(size, 500);
+	buffer = buf->Data();
 
+	if (kLastBuf != NULL) {
+		kLastBuf->Recycle();
+	}
+
+	int64 frames = 0;
+	kTic->ReadFrames(kLastBuf->Data(), &frames);
+	if (frames <= 0) {
+		memset(kLastBuf->Data(), 0, size);
+		kTic->SeekToTime(0);
+	}
+	buffer = kLastBuf->Data();
+	kLastBuf = buf;
 	//int64 
 }
 
@@ -126,6 +142,9 @@ Core::LoadTicks()
 		// Alert
 		return B_ERROR;
 	}
+
+	kBuffers = new BBufferGroup(fileFormat.u.raw_audio.buffer_size,
+		3, B_ANY_ADDRESS, B_FULL_LOCK);
 
 	return B_OK;
 }
