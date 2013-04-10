@@ -232,22 +232,26 @@ CronoView::MessageReceived(BMessage *message)
 		case MSG_START:
 		{
 			printf("Start\n");
-			fCore->Start();
 			fStartButton->SetEnabled(false);
 			fStopButton->SetEnabled(true);
 			fStopButton->MakeDefault(true);
 			fEditMenu->FindItem(MSG_SETTINGS)->SetEnabled(false);
+			fEditMenu->FindItem(MSG_START)->SetEnabled(false);
+			fEditMenu->FindItem(MSG_STOP)->SetEnabled(true);
+			fCore->Start();
 			break;
 		}
 	
 		case MSG_STOP:
 		{
 			printf("Stop\n");
-			fCore->Stop();
 			fStopButton->SetEnabled(false);
 			fStartButton->SetEnabled(true);
 			fStartButton->MakeDefault(true);
 			fEditMenu->FindItem(MSG_SETTINGS)->SetEnabled(true);
+			fEditMenu->FindItem(MSG_START)->SetEnabled(true);
+			fEditMenu->FindItem(MSG_STOP)->SetEnabled(false);
+			fCore->Stop();
 			break;
 		}
 

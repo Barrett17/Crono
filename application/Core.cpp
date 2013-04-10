@@ -8,8 +8,6 @@
  */
 #include "Core.h"
 
-#include <Buffer.h>
-#include <BufferGroup.h>
 #include <SoundPlayer.h>
 
 #include "CronoDefaults.h"
@@ -24,32 +22,54 @@ BMediaFile* kTocFile = NULL;
 BMediaTrack* kTic = NULL;
 BMediaTrack* kToc = NULL;
 
-BBufferGroup *kBuffers = NULL;
+size_t kDataPassed = 0;
 
-BBuffer* kLastBuf;
+size_t kRemainingPulse = 0;
+
+bigtime_t currentPulses = 0;
+bigtime_t pulseDuration = 0;
+bigtime_t emptyBuffers = 0;
+bigtime_t timeUnit = 0;
+
+int sem = 0;
+
 
 void
 Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 	const media_raw_audio_format& format)
 {
+	kDataPassed += size;
 	printf("playing\n");
 
-	BBuffer* buf = kBuffers->RequestBuffer(size, 500);
-	buffer = buf->Data();
-
-	if (kLastBuf != NULL) {
-		kLastBuf->Recycle();
+	if (sem == 0) {
+		printf("recalc\n");
+		pulseDuration = kTic->Duration();
+		currentPulses = gCronoSettings.Speed/60;
+		emptyBuffers = currentPulses - pulseDuration;
+		timeUnit = size/(format.channel_count * format.frame_rate);
 	}
 
-	int64 frames = 0;
-	kTic->ReadFrames(kLastBuf->Data(), &frames);
-	if (frames <= 0) {
-		memset(kLastBuf->Data(), 0, size);
-		kTic->SeekToTime(0);
+	if (sem == 0) {
+		printf("read\n");
+		int64 frames = 0;
+		kTic->ReadFrames(buffer, &frames);
+		//if (frames < size*2) {
+
+		if (kTic->CurrentTime() == kTic->Duration())
+			kTic->SeekToTime(0);
+		// set to 0
+		//}
+		sem = 1;
+
+		//pulseDuration -= frames/2*timeUnit;
+	} else {
+		printf("empty\n");
+		memset(buffer, 0, size);
+		emptyBuffers -= size*timeUnit;
+		sem = 0;
 	}
-	buffer = kLastBuf->Data();
-	kLastBuf = buf;
-	//int64 
+
+
 }
 
 
@@ -143,9 +163,6 @@ Core::LoadTicks()
 		return B_ERROR;
 	}
 
-	kBuffers = new BBufferGroup(fileFormat.u.raw_audio.buffer_size,
-		3, B_ANY_ADDRESS, B_FULL_LOCK);
-
 	return B_OK;
 }
 
@@ -184,6 +201,7 @@ Core::Start()
 				return;
 			}
 		fRunning = true;
+		kPlayer->SetVolume((float)gCronoSettings.CronoVolume/25);
 		kPlayer->Start();
 	}
 }
@@ -219,9 +237,10 @@ Core::SetMeter(int32 m)
 void 
 Core::SetVolume(int32 v)
 {
-	// TODO modify as needed to use BSoundPlayer::SetVolume(float)
-	if (v <= 100 && v >= 0)
+	if (v <= 100 && v >= 0) {
+		kPlayer->SetVolume((float)v/25);
 		gCronoSettings.CronoVolume = v;
+	}
 }
 
 

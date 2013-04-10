@@ -1,5 +1,7 @@
 * Add file LICENSE, creator and license of the sounds
 
+* Add settings view from BMediaTrack::ParameterWeb()
+
 * Finish tempo slider.
 
 * Aggiungere una gestione decente degli accenti, in modo da poterli selezionare
