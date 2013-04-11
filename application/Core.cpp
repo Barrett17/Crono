@@ -24,6 +24,7 @@ BMediaTrack* kTic = NULL;
 BMediaTrack* kToc = NULL;
 
 size_t kSize = 0;
+size_t kLimit = 0;
 
 int sem = 0;
 
@@ -34,26 +35,29 @@ void
 Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 	const media_raw_audio_format& format)
 {
-	printf("playing\n");
+	//printf("playing\n");
 
-	size_t limit = ((format.frame_rate*format.channel_count) * 60)
-		/gCronoSettings.Speed;
+	size_t limit = kLimit/gCronoSettings.Speed;
 
-	if (kSize > limit) {
+	if (kSize >= limit) {
 		kSize = kSize-limit;
 		sem = 0;
 	}
 
 	if (sem == 0) {
-		printf("read\n");
+		//printf("read\n");
 		ssize_t read = buf->Read(buffer, size);
-		if (read < 1) {
+		char* b = (char*)buffer;
+		if (read < size) {
 			buf->Seek(0, SEEK_SET);
 			sem = 1;
+			for (read; read < size; read++) {
+				b[read] = 0;
+			}
 		}
 		kSize += read;
 	} else if (sem == 1) {
-			printf("empty\n");
+			//printf("empty\n");
 			memset(buffer, 0, size);
 			kSize += size;
 	}
@@ -98,7 +102,7 @@ Core::LoadTicks()
 {
 	if (kTicFile != NULL && kTocFile != NULL)
 		UnloadTicks();
- 
+
 	kTicFile = new BMediaFile(
 		new BFile(gCronoSettings.TicLocation, B_READ_ONLY));
 
@@ -151,6 +155,10 @@ Core::LoadTicks()
 	}
 
 	delete buffer;
+
+	kLimit = (fileFormat.u.raw_audio.frame_rate
+		*(fileFormat.u.raw_audio.channel_count+1))*60;
+
 	return B_OK;
 }
 
@@ -159,6 +167,11 @@ Core::LoadTicks()
 status_t
 Core::UnloadTicks() 
 {
+	if (fRunning)
+		Stop();
+
+	delete kPlayer;
+
 	if (kTicFile != NULL && kTicFile->InitCheck() == B_OK)
 		kTicFile->ReleaseAllTracks();
 
@@ -175,7 +188,6 @@ Core::UnloadTicks()
 	kToc = NULL;
 
 	delete buf;
-	delete kPlayer;
 
 	return B_OK;
 }
