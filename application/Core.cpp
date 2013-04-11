@@ -84,7 +84,6 @@ Core::Core()
 Core::~Core()
 {
 	UnloadTicks();
-	delete kPlayer;
 }
 
 
