@@ -43,8 +43,6 @@ public:
 							const media_raw_audio_format& format);
 private:
 	static	void		_PrepareBuffers();
-	static	void		_NextBuffer(void* buffer, size_t size,
-							const media_raw_audio_format& format);
 	
 			status_t	fErr;
 

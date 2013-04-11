@@ -13,6 +13,7 @@
 #include "CronoDefaults.h"
 
 #include <stdio.h>
+#include <string.h>
 
 BSoundPlayer* kPlayer = NULL;
 
@@ -22,75 +23,44 @@ BMediaFile* kTocFile = NULL;
 BMediaTrack* kTic = NULL;
 BMediaTrack* kToc = NULL;
 
-size_t kDataPassed = 0;
-
-size_t kRemainingPulse = 0;
-
-bigtime_t currentPulses = 0;
-bigtime_t pulseDuration = 0;
-bigtime_t emptyBuffers = 0;
-bigtime_t timeUnit = 0;
+size_t kSize = 0;
 
 int sem = 0;
+
+BMallocIO* buf;
 
 
 void
 Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 	const media_raw_audio_format& format)
 {
-	kDataPassed += size;
 	printf("playing\n");
 
-	if (sem == 0) {
-		printf("recalc\n");
-		pulseDuration = kTic->Duration();
-		currentPulses = gCronoSettings.Speed/60;
-		emptyBuffers = currentPulses - pulseDuration;
-		timeUnit = size/(format.channel_count * format.frame_rate);
+	if (kSize > format.frame_rate) {
+		kSize = (kSize+size)-format.frame_rate;
+		sem = 0;
 	}
 
 	if (sem == 0) {
 		printf("read\n");
-		int64 frames = 0;
-		kTic->ReadFrames(buffer, &frames);
-		//if (frames < size*2) {
-
-		if (kTic->CurrentTime() == kTic->Duration())
-			kTic->SeekToTime(0);
-		// set to 0
-		//}
-		sem = 1;
-
-		//pulseDuration -= frames/2*timeUnit;
-	} else {
-		printf("empty\n");
-		memset(buffer, 0, size);
-		emptyBuffers -= size*timeUnit;
-		sem = 0;
+		ssize_t read = buf->Read(buffer, size);
+		if (read < 1) {
+			buf->Seek(0, SEEK_SET);
+			sem = 1;
+		}
+		kSize += read;
+	} else if (sem == 1) {
+			printf("empty\n");
+			memset(buffer, 0, size);
+			kSize += size;
 	}
-
-
+	printf("%d\n", kSize);
 }
 
 
 void
 Core::_PrepareBuffers()
 {
-}
-
-
-void
-Core::_NextBuffer(void* buffer, size_t size,
-	const media_raw_audio_format& format)
-{
-	//int64 frames = 0;
-	//kTic->ReadFrames(buffer, &frames);
-
-	//if (frames <= 0) {
-		memset(buffer, 0, size);
-		//kPlayer->SetHasData(false);
-	//	kTic->SeekToTime(0);
-//	}
 }
 
 
@@ -148,7 +118,8 @@ Core::LoadTicks()
 	media_format fileFormat;
 	fileFormat.type = B_MEDIA_RAW_AUDIO;
 
-	if (kTic != NULL && kTic->DecodedFormat(&fileFormat) == B_OK
+	if (kTic != NULL && kTic->EncodedFormat(&fileFormat) == B_OK &&
+		kTic->DecodedFormat(&fileFormat) == B_OK
 			&& fileFormat.type == B_MEDIA_RAW_AUDIO) {
 
 		if (kPlayer != NULL)
@@ -163,6 +134,20 @@ Core::LoadTicks()
 		return B_ERROR;
 	}
 
+	buf = new BMallocIO();
+	buf->SetSize(kTic->CountFrames()*2);
+	void* buffer = new char[fileFormat.u.raw_audio.buffer_size];
+
+	int64 frames;
+	status_t ret;
+	for (frames = 0; frames < kTic->CountFrames();) {
+		int64 count;
+		ret = kTic->ReadFrames(buffer, &count);
+		frames += count;
+		buf->Write(buffer, fileFormat.u.raw_audio.buffer_size);
+	}
+
+	delete buffer;
 	return B_OK;
 }
 
@@ -186,6 +171,9 @@ Core::UnloadTicks()
 	kTic = NULL;
 	kToc = NULL;
 
+	delete buf;
+	delete kPlayer;
+
 	return B_OK;
 }
 
@@ -198,6 +186,8 @@ Core::Start()
 		if (gCronoSettings.LocationsChanged())
 			if (LoadTicks() != B_OK) {
 				printf("Unable to start!");
+				// TODO this method should return an error
+				// and the error should be checked by CronoView.
 				return;
 			}
 		fRunning = true;
