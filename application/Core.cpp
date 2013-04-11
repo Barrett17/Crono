@@ -36,8 +36,11 @@ Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 {
 	printf("playing\n");
 
-	if (kSize > format.frame_rate) {
-		kSize = (kSize+size)-format.frame_rate;
+	size_t limit = ((format.frame_rate*format.channel_count) * 60)
+		/gCronoSettings.Speed;
+
+	if (kSize > limit) {
+		kSize = kSize-limit;
 		sem = 0;
 	}
 
