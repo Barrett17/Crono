@@ -69,13 +69,13 @@ CronoView::CronoView()
 	volBox->SetLayout(volLayout);
 	
 	fVolumeSlider = new BSlider("", "", new BMessage(MSG_VOLUME),
-		0, 100, B_HORIZONTAL);
+		1, 30, B_HORIZONTAL);
 
 	fVolumeSlider->SetLimitLabels("Min", "Max");
 	fVolumeSlider->SetHashMarks(B_HASH_MARKS_BOTTOM);
 	fVolumeSlider->SetHashMarkCount(10);
 	fVolumeSlider->SetBarColor(barColor);
-	fVolumeSlider->SetValue(fCore->Volume());
+	fVolumeSlider->SetValue((int32)fCore->Volume()*10);
 	fVolumeSlider->UseFillColor(true, &fillColor);
 	
 	volLayout->AddView(fVolumeSlider);
@@ -188,8 +188,6 @@ CronoView::AttachedToWindow()
 void
 CronoView::MessageReceived(BMessage *message)
 {
-	float position;
-	
 	switch(message->what)
 	{
 
@@ -239,7 +237,9 @@ CronoView::MessageReceived(BMessage *message)
 			fEditMenu->FindItem(MSG_SETTINGS)->SetEnabled(false);
 			fEditMenu->FindItem(MSG_START)->SetEnabled(false);
 			fEditMenu->FindItem(MSG_STOP)->SetEnabled(true);
-			fCore->Start();
+			if (fCore->Start() != B_OK) {
+				// alert
+			}
 			break;
 		}
 	
@@ -258,10 +258,9 @@ CronoView::MessageReceived(BMessage *message)
 
 		case MSG_VOLUME:
 		{
-			position = fVolumeSlider->Position();
-			position = 100 * position;
-			printf("Volume: %d\n", (int) position);
-			fCore->SetVolume(((int) position));
+			float position = (float)fVolumeSlider->Position();
+			printf("Volume: %f\n", position);
+			fCore->SetVolume(position);
 			break;
 		}
 
@@ -297,24 +296,24 @@ CronoView::MessageReceived(BMessage *message)
 		{
 			unsigned bpm = abs(atoi(fSpeedEntry->Text()));
 			
-			if (bpm > 500) {
-				fSpeedEntry->SetText("500");
-				bpm = 500;
-			} else if(bpm == 0) {
-				fSpeedEntry->SetText("1");
-				bpm = 1;
+			if (bpm > MAX_SPEED) {
+				fSpeedEntry->SetText(BString() << MAX_SPEED);
+				bpm = MAX_SPEED;
+			} else if(bpm < MIN_SPEED) {
+				fSpeedEntry->SetText(BString() << MIN_SPEED);
+				bpm = MIN_SPEED;
 			}
 				
 			fCore->SetSpeed(((int) bpm));
 			
-			fSpeedSlider->SetPosition(((float) bpm / 500));
+			fSpeedSlider->SetPosition(((float) bpm / MAX_SPEED));
 			printf("Speed: %s %d\n", fSpeedEntry->Text(), bpm);
 			break;
 		}
 
 		case MSG_SPEED_SLIDER:
 		{
-			float v = fSpeedSlider->Value();
+			float v = (float)fSpeedSlider->Value();
 			
 			if (v == 0)
 				v = 1;

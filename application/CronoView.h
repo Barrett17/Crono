@@ -33,6 +33,7 @@ const int32 MSG_SPEED_ENTRY			= 0x13;
 const int32 MSG_METER_ENTRY			= 0x14;
 const int32 MSG_METER_RADIO			= 0x15;
 
+
 /**
  * View del metronomo
  */

@@ -28,16 +28,16 @@ public:
 			status_t 	LoadTicks();
 			status_t 	UnloadTicks();
 
-			void 		Stop();
-			void 		Start();
+			status_t	Stop();
+			status_t	Start();
 
 			void 		SetSpeed(int32 speed);
 			void 		SetMeter(int32 meter);
-			void 		SetVolume(int32 volume);
+			void 		SetVolume(float volume);
 	
 			int32		Speed();
 			int32 		Meter();
-			int32 		Volume();
+			float		Volume();
 
 	static	void		PlayBuffer(void* cookie, void* buffer, size_t size,
 							const media_raw_audio_format& format);

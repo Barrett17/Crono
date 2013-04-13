@@ -32,17 +32,19 @@ virtual					~Settings();
 
 		int32 			Speed;
 		int32 			Meter;
-		int32			CronoVolume;
+		float			CronoVolume;
 
 protected:
 
 		status_t		ReadSetting(const char* name, BString* string);
 		status_t		ReadSetting(const char* name, int32* setting);
 		status_t		ReadSetting(const char* name, bool* setting);
+		status_t		ReadSetting(const char* name, float* setting);
 
 		status_t		WriteSetting(const char* name, const char* string);
 		status_t		WriteSetting(const char* name, int32 setting);
 		status_t		WriteSetting(const char* name, bool setting);
+		status_t		WriteSetting(const char* name, float setting);
 		
 		status_t		ReplaceSetting(const char* name, const char* string);
 		status_t		ReplaceSetting(const char* name, int32 setting);

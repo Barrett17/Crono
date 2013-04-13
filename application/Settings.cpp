@@ -145,6 +145,21 @@ Settings::ReadSetting(const char* name, bool* setting)
 
 
 status_t
+Settings::ReadSetting(const char* name, float* setting)
+{
+	return FindFloat(name, setting);
+}
+
+
+
+status_t
+Settings::WriteSetting(const char* name, float setting)
+{
+	return AddFloat(name, setting);	 
+}
+
+
+status_t
 Settings::WriteSetting(const char* name, const char* string)
 {
 	return AddString(name, string);	 

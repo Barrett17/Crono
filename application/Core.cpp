@@ -46,12 +46,12 @@ Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 
 	if (sem == 0) {
 		//printf("read\n");
-		ssize_t read = buf->Read(buffer, size);
+		size_t read = buf->Read(buffer, size);
 		char* b = (char*)buffer;
 		if (read < size) {
 			buf->Seek(0, SEEK_SET);
 			sem = 1;
-			for (read; read < size; read++) {
+			for (;read < size; read++) {
 				b[read] = 0;
 			}
 		}
@@ -61,7 +61,7 @@ Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 			memset(buffer, 0, size);
 			kSize += size;
 	}
-	printf("%d\n", kSize);
+	printf("%ld\n", kSize);
 }
 
 
@@ -149,14 +149,16 @@ Core::LoadTicks()
 	for (frames = 0; frames < kTic->CountFrames();) {
 		int64 count;
 		ret = kTic->ReadFrames(buffer, &count);
+		if (ret != B_OK)
+			break;
 		frames += count;
 		buf->Write(buffer, fileFormat.u.raw_audio.buffer_size);
 	}
 
-	delete buffer;
+	delete[] (char*)buffer;
 
-	kLimit = (fileFormat.u.raw_audio.frame_rate
-		*(fileFormat.u.raw_audio.channel_count+1))*60;
+	kLimit = (size_t)(fileFormat.u.raw_audio.frame_rate
+		*(float)(fileFormat.u.raw_audio.channel_count+1))*60;
 
 	return B_OK;
 }
@@ -193,39 +195,41 @@ Core::UnloadTicks()
 
 
 // Start the metronome 
-void 
+status_t
 Core::Start()
 {
 	if (!fRunning) {
-		if (gCronoSettings.LocationsChanged())
-			if (LoadTicks() != B_OK) {
-				printf("Unable to start!");
-				// TODO this method should return an error
-				// and the error should be checked by CronoView.
-				return;
-			}
+		status_t ret;
+		if (gCronoSettings.LocationsChanged()) {
+			ret = LoadTicks();
+			if (ret != B_OK)
+				return ret;
+		}
 		fRunning = true;
-		kPlayer->SetVolume((float)gCronoSettings.CronoVolume/25);
-		kPlayer->Start();
+		kPlayer->SetVolume(gCronoSettings.CronoVolume);
+		return kPlayer->Start();
 	}
+	return B_OK;
 }
 
 
 // Stop the metronome 
-void 
+status_t
 Core::Stop()
 {
 	if (fRunning) {
 		fRunning = false;
 		kPlayer->Stop();
+		buf->Seek(0, SEEK_SET);
 	}
+	return B_OK;
 }
 
 
 void 
 Core::SetSpeed(int32 s)
 {
-	if (s <= 500 && s > 1)
+	if (s <= MAX_SPEED && s > MIN_SPEED)
 		gCronoSettings.Speed = s;
 }
 
@@ -239,16 +243,16 @@ Core::SetMeter(int32 m)
 
 
 void 
-Core::SetVolume(int32 v)
+Core::SetVolume(float v)
 {
-	if (v <= 100 && v >= 0) {
-		kPlayer->SetVolume((float)v/25);
+	if (v <= 1.0 || v >= 0.0) {
+		kPlayer->SetVolume(v);
 		gCronoSettings.CronoVolume = v;
 	}
 }
 
 
-int32 
+float
 Core::Volume()
 {
 	return gCronoSettings.CronoVolume;	
