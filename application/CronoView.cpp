@@ -77,7 +77,8 @@ CronoView::CronoView()
 	fVolumeSlider->SetBarColor(barColor);
 	fVolumeSlider->SetValue((int32)fCore->Volume()*10);
 	fVolumeSlider->UseFillColor(true, &fillColor);
-	
+	fVolumeSlider->SetValue((int32)gCronoSettings.CronoVolume);
+
 	volLayout->AddView(fVolumeSlider);
 	rootLayout->AddView(volBox);
 
@@ -190,7 +191,6 @@ CronoView::MessageReceived(BMessage *message)
 {
 	switch(message->what)
 	{
-
 		case MSG_CLOSE:
 		{
 			be_app->PostMessage(B_QUIT_REQUESTED);
@@ -220,9 +220,9 @@ CronoView::MessageReceived(BMessage *message)
 		{
 			SettingsWindow *settWindow;
 			BRect windowRect;
-			
-			windowRect.Set(150,150,340,325);
-	
+
+			windowRect.Set(150,150,440,425);
+
 			settWindow = new SettingsWindow(windowRect);
 			settWindow->Show();
 			break;
@@ -230,22 +230,29 @@ CronoView::MessageReceived(BMessage *message)
 
 		case MSG_START:
 		{
-			printf("Start\n");
+			status_t ret = fCore->Start();
+			if (ret != B_OK) {
+				BString str("\nError starting Crono :\n");
+				str << strerror(ret);
+				BAlert *alert = new BAlert("Error", 
+					str.String(),
+					"OK", NULL, NULL, B_WIDTH_FROM_WIDEST, B_EVEN_SPACING,
+					B_INFO_ALERT);
+					alert->Go();
+				break;
+			}
 			fStartButton->SetEnabled(false);
 			fStopButton->SetEnabled(true);
 			fStopButton->MakeDefault(true);
 			fEditMenu->FindItem(MSG_SETTINGS)->SetEnabled(false);
 			fEditMenu->FindItem(MSG_START)->SetEnabled(false);
 			fEditMenu->FindItem(MSG_STOP)->SetEnabled(true);
-			if (fCore->Start() != B_OK) {
-				// alert
-			}
+			printf("CronoView: Start\n");
 			break;
 		}
-	
+
 		case MSG_STOP:
 		{
-			printf("Stop\n");
 			fStopButton->SetEnabled(false);
 			fStartButton->SetEnabled(true);
 			fStartButton->MakeDefault(true);
@@ -253,41 +260,42 @@ CronoView::MessageReceived(BMessage *message)
 			fEditMenu->FindItem(MSG_START)->SetEnabled(true);
 			fEditMenu->FindItem(MSG_STOP)->SetEnabled(false);
 			fCore->Stop();
+			printf("CronoView: Stop\n");
 			break;
 		}
 
 		case MSG_VOLUME:
 		{
 			float position = (float)fVolumeSlider->Position();
-			printf("Volume: %f\n", position);
 			fCore->SetVolume(position);
+			printf("CronoView: Volume: %f\n", position);
 			break;
 		}
 
 		case MSG_METER_RADIO:
 		{
 			int selected = 0;
-			
+
 			// Get the selected radiobutton
-			for (int i = 0; i < 5; i++)
+			for (int i = 0; i < 5; i++) {
 				if (fMeterRadios[i]->Value())
 					selected = i;
-			
+			}
+
 			// If "Other" is selected, enable the fMeterEntry
 			if (selected == 4) {
 				fMeterEntry->SetEnabled(true);
 			} else {
 				fMeterEntry->SetEnabled(false);
 				fCore->SetMeter(((int) selected + 1));
-			}
-					
+			}		
 			break;
 		}
-		
+
 		case MSG_METER_ENTRY:
 		{
 			unsigned position = abs(atoi(fMeterEntry->Text()));
-			
+	
 			fCore->SetMeter(((int) position));
 			break;
 		}
@@ -295,7 +303,7 @@ CronoView::MessageReceived(BMessage *message)
 		case MSG_SPEED_ENTRY:
 		{
 			unsigned bpm = abs(atoi(fSpeedEntry->Text()));
-			
+
 			if (bpm > MAX_SPEED) {
 				fSpeedEntry->SetText(BString() << MAX_SPEED);
 				bpm = MAX_SPEED;
@@ -303,32 +311,29 @@ CronoView::MessageReceived(BMessage *message)
 				fSpeedEntry->SetText(BString() << MIN_SPEED);
 				bpm = MIN_SPEED;
 			}
-				
+
 			fCore->SetSpeed(((int) bpm));
-			
+
 			fSpeedSlider->SetPosition(((float) bpm / MAX_SPEED));
-			printf("Speed: %s %d\n", fSpeedEntry->Text(), bpm);
+			printf("Crono Speed: %s %d\n", fSpeedEntry->Text(), bpm);
 			break;
 		}
 
 		case MSG_SPEED_SLIDER:
 		{
 			float v = (float)fSpeedSlider->Value();
-			
+
 			if (v == 0)
 				v = 1;
-				
+
 			char strv[32];
-			
 			sprintf(strv, "%d", (int) v);
 			fSpeedEntry->SetText(strv);
-
 			fCore->SetSpeed((int) v);
-			
 			break;
 		}
 
 		default:
 			BView::MessageReceived(message);
-	}			
+	}
 }

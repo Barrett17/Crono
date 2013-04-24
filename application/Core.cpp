@@ -30,6 +30,11 @@ int sem = 0;
 
 BMallocIO* buf;
 
+double mTheta = 0;
+media_format fileFormat;
+bool mWaveAscending = false;
+double mGain = 1;
+
 
 void
 Core::PlayBuffer(void* cookie, void* buffer, size_t size,
@@ -45,17 +50,9 @@ Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 	}
 
 	if (sem == 0) {
-		//printf("read\n");
-		size_t read = buf->Read(buffer, size);
-		char* b = (char*)buffer;
-		if (read < size) {
-			buf->Seek(0, SEEK_SET);
-			sem = 1;
-			for (;read < size; read++) {
-				b[read] = 0;
-			}
-		}
-		kSize += read;
+		FillFileBuffer((float*)buffer, size);
+		kSize += size;
+		sem = 1;
 	} else if (sem == 1) {
 			//printf("empty\n");
 			memset(buffer, 0, size);
@@ -121,7 +118,7 @@ Core::LoadTicks()
 	kTic = kTicFile->TrackAt(0);
 	kToc = kTocFile->TrackAt(0);
 
-	media_format fileFormat;
+
 	fileFormat.type = B_MEDIA_RAW_AUDIO;
 
 	if (kTic != NULL && kTic->EncodedFormat(&fileFormat) == B_OK &&
@@ -270,4 +267,97 @@ int32
 Core::Meter()
 {
 	return gCronoSettings.Meter;	
+}
+
+
+void
+Core::FillFileBuffer(float* data, size_t numFrames)
+{
+		//printf("read\n");
+	size_t read = buf->Read(data, numFrames);
+	if (read < numFrames) {
+		buf->Seek(0, SEEK_SET);
+		sem = 1;
+		for (;read <= numFrames; read++) {
+			data[read] = 0;
+		}
+	}	
+}
+
+
+// Sine, Triangle and Sawtooth methods comes originally 
+// from the ToneProducer example plugin included in Haiku.
+void
+Core::FillSineBuffer(float* data, size_t numFrames, bool stereo)
+{
+	// cover 2pi radians in one period
+	double dTheta = 2*M_PI * double(50) / fileFormat.u.raw_audio.frame_rate;
+
+	// Fill the buffer!
+	for (size_t i = 0; i < numFrames; i++, data++) {
+		float val = mGain * float(sin(mTheta));
+		*data = val;
+		if (stereo) {
+			++data;
+			*data = val;
+		}
+
+		mTheta += dTheta;
+		if (mTheta > 2*M_PI)
+			mTheta -= 2*M_PI;
+	}
+}
+
+
+void
+Core::FillTriangleBuffer(float* data, size_t numFrames, bool stereo)
+{
+	// ramp from -1 to 1 and back in one period
+	double dTheta = 4.0 * double(50) / fileFormat.u.raw_audio.frame_rate;
+	if (!mWaveAscending)
+		dTheta = -dTheta;
+
+	// fill the buffer!
+	for (size_t i = 0; i < numFrames; i++, data++) {
+		float val = mGain * mTheta;
+		*data = val;
+		if (stereo) {
+			++data;
+			*data = val;
+		}
+		
+		mTheta += dTheta;
+		if (mTheta >= 1) {
+			mTheta = 2 - mTheta; // reflect across the mTheta=1 line to preserve drift
+			mWaveAscending = false;
+			dTheta = -dTheta;
+		} else if (mTheta <= -1) {
+			mTheta = -2 - mTheta; // reflect across mTheta=-1
+			mWaveAscending = true;
+			dTheta = -dTheta;
+		}
+	}
+}
+
+
+void
+Core::FillSawtoothBuffer(float* data, size_t numFrames, bool stereo)
+{
+	// ramp from -1 to 1 in one period
+	double dTheta = 2 * double(50) / fileFormat.u.raw_audio.frame_rate;
+	mWaveAscending = true;
+
+	// fill the buffer!
+	for (size_t i = 0; i < numFrames; i++, data++) {
+		float val = mGain * mTheta;
+		*data = val;
+		if(stereo) {
+			++data;
+			*data = val;
+		}
+
+		mTheta += dTheta;
+		if (mTheta > 1)
+			mTheta -= 2; // back to the base of the sawtooth, including cumulative drift
+	}
 }
