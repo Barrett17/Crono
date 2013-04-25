@@ -21,15 +21,16 @@ struct TempoNames {
 };
 
 static TempoNames gTempoNames[] = {
-	{ 1, 39, "Grave" },
-	{ 40, 50, "Largo" },
-	{ 50, 59, "Lento/Adagio" },
-	{ 60, 79, "Andante" },
-	{ 80, 99, "Moderato" },
-	{ 100, 126, "Allegro" },
-	{ 127, 144, "Vivace" },
-	{ 144, 208, "Presto" },
-	{ 209, 500, "Prestissimo" },
+	{ 10, 39, "Grave" },
+	{ 40, 59, "Largo" },
+	{ 60, 65, "Larghetto" },
+	{ 66, 75, "Lento/Adagio" },
+	{ 76, 107, "Andante" },
+	{ 108, 119, "Moderato" },
+	{ 120, 139, "Allegro" },
+	{ 140, 167, "Vivace" },
+	{ 168, 200, "Presto" },
+	{ 201, 500, "Prestissimo" },
 
 };
 
