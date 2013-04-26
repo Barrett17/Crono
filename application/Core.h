@@ -1,6 +1,5 @@
 /*
  * Copyright (c) Casalinuovo Dario. All rights reserved.
- * Copyright (c) Davide Gessa. All rights reserved.
  * Distributed under the terms of the MIT License for non commercial use.
  *
  * Authors:
@@ -25,8 +24,14 @@ public:
 
 			status_t	InitCheck();
 
-			status_t 	LoadTicks();
-			status_t 	UnloadTicks();
+			status_t	Init();
+			status_t	Destroy();
+
+			status_t 	LoadSoundFile();
+			status_t 	UnloadSoundFile();
+
+			status_t	LoadGeneratedSounds();
+			status_t	UnloadGeneratorSounds();
 
 			status_t	Stop();
 			status_t	Start();
@@ -44,6 +49,8 @@ public:
 private:
 	static	void 		FillFileBuffer(float* data, size_t numFrames);
 
+	static	void 		FillSineBuffer2(float* data, size_t numFrames);
+
 	static	void 		FillSineBuffer(float* data, size_t numFrames,
 							bool stereo);
 
@@ -52,8 +59,6 @@ private:
 
 	static	void 		FillSawtoothBuffer(float* data,
 							size_t numFrames, bool stereo);
-
-	static	void		_PrepareBuffers();
 	
 			status_t	fErr;
 

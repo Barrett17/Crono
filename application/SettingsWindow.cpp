@@ -21,7 +21,6 @@ SettingsWindow::SettingsWindow(BRect frame)
 		B_NOT_ZOOMABLE)
 {	
 	SetLayout(new BGroupLayout(B_VERTICAL));
-
 	fSettingsView = new SettingsView();
 	GetLayout()->AddView(fSettingsView);
 }
@@ -36,13 +35,6 @@ SettingsWindow::MessageReceived(BMessage* message)
 			BWindow::MessageReceived(message);
 	}
 }
-
-/*
-void
-SettingsWindow::Quit()
-{
-
-}*/
 
 
 bool

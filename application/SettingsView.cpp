@@ -24,47 +24,48 @@ SettingsView::SettingsView()
 	BView("SettingsView", B_WILL_DRAW, 0)
 {
 	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
-	
-	// Main layout
-	BGroupLayout* rootLayout = new BGroupLayout(B_VERTICAL);
-	SetLayout(rootLayout);
 
-	// Audiofile entry
-	BGroupView* audioGroup = new BGroupView(B_HORIZONTAL);
+	// Engines entry
 	BBox* audioBox = new BBox("audiobox");
-	audioBox->SetLabel("Audio files");
+	audioBox->SetLabel("Engines");
 
 	BGroupLayout* audioLayout = new BGroupLayout(B_VERTICAL);
 	audioLayout->SetInsets(10, audioBox->TopBorderOffset() * 2 + 10, 10, 10);
 	audioBox->SetLayout(audioLayout);
-	
-	fTocSoundEntry = new BTextControl("Toc", "Toc", gCronoSettings.TocLocation,
-		new BMessage(MSG_SET), B_WILL_DRAW);
 
+	fSineEngine = new BRadioButton("sine", "Sine",
+		new BMessage(MSG_SET_ENGINE));
+	audioLayout->AddView(fSineEngine);
+
+	fTriangleEngine = new BRadioButton("triangle", "Triangle",
+		new BMessage(MSG_SET_ENGINE));
+	audioLayout->AddView(fTriangleEngine);
+
+	fSawtoothEngine = new BRadioButton("sawtooth", "Sawtooth",
+		new BMessage(MSG_SET_ENGINE));
+	audioLayout->AddView(fSawtoothEngine);
+
+	fFileEngine = new BRadioButton("file", "File Engine",
+		new BMessage(MSG_SET_ENGINE));
+	audioLayout->AddView(fFileEngine);
+
+	fTocSoundEntry = new BTextControl("Soundfile", "Soundfile",
+		gCronoSettings.TocLocation, new BMessage(MSG_SET), B_WILL_DRAW);
 	fTocSoundEntry->SetDivider(70);
 	fTocSoundEntry->SetAlignment(B_ALIGN_CENTER, B_ALIGN_CENTER);
-		
-	fTicSoundEntry = new BTextControl("Tic", "Tic", gCronoSettings.TicLocation, 
-		new BMessage(MSG_SET), B_WILL_DRAW);
-
-	fTicSoundEntry->SetDivider(70);
-	fTicSoundEntry->SetAlignment(B_ALIGN_CENTER, B_ALIGN_CENTER);
-
-	audioLayout->AddView(fTicSoundEntry);
 	audioLayout->AddView(fTocSoundEntry);
-	audioGroup->GroupLayout()->AddView(audioBox);
-	rootLayout->AddView(audioGroup);
-	
-	// Defaults and revert buttons
-	BGroupView* buttonGroup = new BGroupView(B_HORIZONTAL);
 
-	fDefaultsButton = new BButton("Defaults", new BMessage(MSG_DEFAULTS));						
-	buttonGroup->GroupLayout()->AddView(fDefaultsButton);
+	fDefaultsButton = new BButton("Defaults", new BMessage(MSG_DEFAULTS));
+	fRevertButton = new BButton("Revert", new BMessage(MSG_REVERT));
 
-	fRevertButton = new BButton("Revert", new BMessage(MSG_REVERT));							
-	buttonGroup->GroupLayout()->AddView(fRevertButton);
-
-	rootLayout->AddView(buttonGroup);
+	BLayoutBuilder::Group<>(this, B_VERTICAL, 5)
+		.AddGroup(B_VERTICAL)
+			.Add(audioBox, 0)
+		.End()
+		.AddGroup(B_HORIZONTAL)
+			.Add(fDefaultsButton, 0)
+			.Add(fRevertButton, 1)
+		.End();
 }
 
 
@@ -80,7 +81,6 @@ SettingsView::AttachedToWindow()
 {
 	fDefaultsButton->SetTarget(this);
 	fRevertButton->SetTarget(this);
-	fTicSoundEntry->SetTarget(this);
 	fTocSoundEntry->SetTarget(this);	
 	
 	Window()->CenterOnScreen();
@@ -96,7 +96,6 @@ SettingsView::MessageReceived(BMessage *message)
 		case MSG_DEFAULTS:
 		{
 			fTocSoundEntry->SetText(CRONO_TOC_LOCATION);
-			fTicSoundEntry->SetText(CRONO_TIC_LOCATION);
 		}
 		break;
 
@@ -113,8 +112,6 @@ SettingsView::MessageReceived(BMessage *message)
 void
 SettingsView::_UpdateData()
 {
-	gCronoSettings.TicLocation.SetTo(
-		fTicSoundEntry->Text());
 	gCronoSettings.TocLocation.SetTo(
 		fTocSoundEntry->Text());
 }

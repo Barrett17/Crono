@@ -65,6 +65,7 @@ Settings::OpenSettings()
 		CronoVolume = DEFAULT_VOLUME;
 		TicLocation = CRONO_TIC_LOCATION;
 		TocLocation = CRONO_TOC_LOCATION;
+		Engine = CRONO_SINE_ENGINE;
 		return ret;
 	}
 
@@ -218,6 +219,7 @@ Settings::_CheckSettings()
 	WriteSetting("SPEED", Speed);
 	WriteSetting("METER", Meter);
 	WriteSetting("VOLUME", CronoVolume);
+	WriteSetting("ENGINE", Engine);
 }
 
 
@@ -229,6 +231,7 @@ Settings::_SetTo()
 	ReadSetting("SPEED", &Speed);
 	ReadSetting("METER", &Meter);
 	ReadSetting("VOLUME", &CronoVolume);
+	ReadSetting("ENGINE", &Engine);
 
 	fTicLocationUndo = TicLocation.String();
 	fTocLocationUndo = TocLocation.String();

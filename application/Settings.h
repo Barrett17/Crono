@@ -34,6 +34,8 @@ virtual					~Settings();
 		int32 			Meter;
 		float			CronoVolume;
 
+		int32			Engine;
+
 protected:
 
 		status_t		ReadSetting(const char* name, BString* string);

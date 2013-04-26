@@ -12,8 +12,10 @@
 #include <Alert.h>
 #include <Button.h>
 #include <GroupView.h>
+#include <LayoutBuilder.h>
 #include <Menu.h>
 #include <MenuItem.h>
+#include <Roster.h>
 #include <Slider.h>
 #include <TextControl.h>
 #include <View.h>
@@ -28,6 +30,25 @@
 #include <math.h>
 #include <stdlib.h>
 
+struct TempoNames {
+	int32 max;
+	int32 min;
+	const char* name;
+};
+
+static TempoNames gTempoNames[] = {
+	{ 10, 39, "Grave" },
+	{ 40, 59, "Largo" },
+	{ 60, 65, "Larghetto" },
+	{ 66, 75, "Lento/Adagio" },
+	{ 76, 107, "Andante" },
+	{ 108, 119, "Moderato" },
+	{ 120, 139, "Allegro" },
+	{ 140, 167, "Vivace" },
+	{ 168, 200, "Presto" },
+	{ 201, 500, "Prestissimo" },
+};
+
 
 CronoView::CronoView()
 	:
@@ -38,28 +59,29 @@ CronoView::CronoView()
 	
 	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 
-	// Main layout
-	BGroupLayout* rootLayout = new BGroupLayout(B_VERTICAL);
-	SetLayout(rootLayout);
-
 	// Core
 	fCore = new Core();
 
 	// Menu bar
 	fMenuBar = new BMenuBar("MenuBar");
-	rootLayout->AddView(fMenuBar);
-	
-	fFileMenu = new BMenu("File");
+
+	fFileMenu = new BMenu("Metronome");
 	fFileMenu->AddItem(new BMenuItem("Quit", new BMessage(MSG_CLOSE), 'Q'));
-	fFileMenu->AddItem(new BMenuItem("About", new BMessage(MSG_ABOUT), 'A'));
+	fFileMenu->AddItem(new BSeparatorItem);
+	fFileMenu->AddItem(new BMenuItem("Start", new BMessage(MSG_START), 'G'));
+	fFileMenu->AddItem(new BMenuItem("Stop", new BMessage(MSG_STOP), 'H'));
 	fMenuBar->AddItem(fFileMenu);
 	
 	fEditMenu = new BMenu("Edit");
 	fEditMenu->AddItem(new BMenuItem("Settings", new BMessage(MSG_SETTINGS), 'S'));
-	fEditMenu->AddItem(new BSeparatorItem);
-	fEditMenu->AddItem(new BMenuItem("Start", new BMessage(MSG_START), 'G'));
-	fEditMenu->AddItem(new BMenuItem("Stop", new BMessage(MSG_STOP), 'H'));
 	fMenuBar->AddItem(fEditMenu);
+
+	fHelpMenu = new BMenu("Help");
+	fHelpMenu->AddItem(new BMenuItem("Help", new BMessage(MSG_HELP), 'H'));
+	fHelpMenu->AddItem(new BMenuItem("Homepage", new BMessage(MSG_HOMEPAGE), 'P'));
+	fHelpMenu->AddItem(new BSeparatorItem);
+	fHelpMenu->AddItem(new BMenuItem("About", new BMessage(MSG_ABOUT), 'A'));
+	fMenuBar->AddItem(fHelpMenu);
 
 	// Volume slider
 	BBox* volBox = new BBox("volbox");
@@ -69,7 +91,7 @@ CronoView::CronoView()
 	volBox->SetLayout(volLayout);
 	
 	fVolumeSlider = new BSlider("", "", new BMessage(MSG_VOLUME),
-		1, 30, B_HORIZONTAL);
+		1, 100, B_HORIZONTAL);
 
 	fVolumeSlider->SetLimitLabels("Min", "Max");
 	fVolumeSlider->SetHashMarks(B_HASH_MARKS_BOTTOM);
@@ -77,11 +99,9 @@ CronoView::CronoView()
 	fVolumeSlider->SetBarColor(barColor);
 	fVolumeSlider->SetValue((int32)fCore->Volume()*10);
 	fVolumeSlider->UseFillColor(true, &fillColor);
-	fVolumeSlider->SetValue((int32)gCronoSettings.CronoVolume);
+	fVolumeSlider->SetPosition(gCronoSettings.CronoVolume);
 
 	volLayout->AddView(fVolumeSlider);
-	rootLayout->AddView(volBox);
-
 
 	// Speed Slider & TextControl
 	BBox* speedBox = new BBox("speedbox");
@@ -108,13 +128,11 @@ CronoView::CronoView()
 		new BMessage(MSG_SPEED_ENTRY), B_WILL_DRAW);
 
 	fSpeedEntry->SetDivider(70);
-	fSpeedEntry->SetAlignment(B_ALIGN_CENTER, B_ALIGN_CENTER);
+	fSpeedEntry->SetAlignment(B_ALIGN_RIGHT, B_ALIGN_RIGHT);
 	fSpeedEntry->SetExplicitSize(BSize(35, 20));
 	
 	speedLayout->AddView(fSpeedSlider);
 	speedLayout->AddView(fSpeedEntry);
-	rootLayout->AddView(speedBox);
-
 
 	// Meter buttons
 	BBox* meterBox = new BBox("meterbox");
@@ -142,7 +160,6 @@ CronoView::CronoView()
 	for(int i= 0; i < 5; i++)
 		meterLayout->AddView(fMeterRadios[i]);
 	meterLayout->AddView(fMeterEntry);
-	rootLayout->AddView(meterBox);
 
 
 	// Start and stop button	
@@ -155,7 +172,14 @@ CronoView::CronoView()
 	fStopButton = new BButton("Stop", new BMessage(MSG_STOP));							
 	buttonGroup->GroupLayout()->AddView(fStopButton);
 
-	rootLayout->AddView(buttonGroup);
+	BLayoutBuilder::Group<>(this, B_VERTICAL, 5)
+		.AddGroup(B_VERTICAL)
+			.Add(fMenuBar, 0)
+			.Add(volBox, 1)
+			.Add(speedBox, 2)
+			.Add(meterBox, 3)
+			.Add(buttonGroup, 4)
+		.End();
 }
 
 
@@ -181,7 +205,8 @@ CronoView::AttachedToWindow()
 	fSpeedSlider->SetTarget(this);
 	fFileMenu->SetTargetForItems(this);
 	fEditMenu->SetTargetForItems(this);
-	
+	fHelpMenu->SetTargetForItems(this);
+
 	Window()->CenterOnScreen();
 }
 
@@ -200,30 +225,37 @@ CronoView::MessageReceived(BMessage *message)
 		case MSG_ABOUT:
 		{
 			BAlert *alert = new BAlert("About Crono", 
-			"\nCrono Metronome V0.0.3\n\n"
-			"Copyright ©2009 - 2013 Dario Casalinuovo\n\n"
-			"Copyright ©2009 - 2013 Davide Gessa \n\n"
-			"Crono is a Software Metronome for Haiku "
-			"Crono is part of StilNovo - http://www.versut.com/."
-			"Released under MIT license for non commercial use.\n\n"
-			"WARNING - Crono is unstable and unfinished, this is not\n"
-			"the final release! Please submit us bugs and improvements ideas.\n\n"
-			"Project Homepage:\n https://github.com/Barrett17/Crono\n"
-			"\nThanks to Stefano D'Angelo for his invaluable help!",
+			"\nCrono Metronome V0.1.0\n\n"
+			"Copyright ©2009-2013 Dario Casalinuovo\n\n"
+			"Copyright ©2009-2012 Davide Gessa \n\n"
+			"Crono is a Software Metronome for Haiku\n"
+			"Crono is part of StilNovo - http://www.versut.com/\n"
+			"Released under the terms of the MIT license.\n"
+			"Thanks to Stefano D'Angelo for his invaluable help!",
 			"OK", NULL, NULL, B_WIDTH_FROM_WIDEST, B_EVEN_SPACING, B_INFO_ALERT);
 			alert->Go();
 
 			break;
 		}
 
+		case MSG_HOMEPAGE:
+		{
+			const char* homepage = CRONO_HOMEPAGE_URL;
+			be_roster->Launch("text/html",1, const_cast<char**>(&homepage));
+			break;
+		}
+
+		case MSG_HELP:
+		{
+			const char* guide = CRONO_USERGUIDE_URL;
+			be_roster->Launch("text/html",1, const_cast<char**>(&guide));
+			break;
+		}
+
 		case MSG_SETTINGS:
 		{
-			SettingsWindow *settWindow;
-			BRect windowRect;
-
-			windowRect.Set(150,150,440,425);
-
-			settWindow = new SettingsWindow(windowRect);
+			BRect windowRect(150,150,440,425);
+			SettingsWindow *settWindow = new SettingsWindow(windowRect);
 			settWindow->Show();
 			break;
 		}
@@ -245,28 +277,29 @@ CronoView::MessageReceived(BMessage *message)
 			fStopButton->SetEnabled(true);
 			fStopButton->MakeDefault(true);
 			fEditMenu->FindItem(MSG_SETTINGS)->SetEnabled(false);
-			fEditMenu->FindItem(MSG_START)->SetEnabled(false);
-			fEditMenu->FindItem(MSG_STOP)->SetEnabled(true);
+			fFileMenu->FindItem(MSG_START)->SetEnabled(false);
+			fFileMenu->FindItem(MSG_STOP)->SetEnabled(true);
 			printf("CronoView: Start\n");
 			break;
 		}
 
 		case MSG_STOP:
 		{
+			fCore->Stop();
 			fStopButton->SetEnabled(false);
 			fStartButton->SetEnabled(true);
 			fStartButton->MakeDefault(true);
 			fEditMenu->FindItem(MSG_SETTINGS)->SetEnabled(true);
-			fEditMenu->FindItem(MSG_START)->SetEnabled(true);
-			fEditMenu->FindItem(MSG_STOP)->SetEnabled(false);
-			fCore->Stop();
+			fFileMenu->FindItem(MSG_START)->SetEnabled(true);
+			fFileMenu->FindItem(MSG_STOP)->SetEnabled(false);
+
 			printf("CronoView: Stop\n");
 			break;
 		}
 
 		case MSG_VOLUME:
 		{
-			float position = (float)fVolumeSlider->Position();
+			float position = fVolumeSlider->Position();
 			fCore->SetVolume(position);
 			printf("CronoView: Volume: %f\n", position);
 			break;
@@ -275,7 +308,6 @@ CronoView::MessageReceived(BMessage *message)
 		case MSG_METER_RADIO:
 		{
 			int selected = 0;
-
 			// Get the selected radiobutton
 			for (int i = 0; i < 5; i++) {
 				if (fMeterRadios[i]->Value())
@@ -295,7 +327,6 @@ CronoView::MessageReceived(BMessage *message)
 		case MSG_METER_ENTRY:
 		{
 			unsigned position = abs(atoi(fMeterEntry->Text()));
-	
 			fCore->SetMeter(((int) position));
 			break;
 		}
@@ -313,7 +344,6 @@ CronoView::MessageReceived(BMessage *message)
 			}
 
 			fCore->SetSpeed(((int) bpm));
-
 			fSpeedSlider->SetPosition(((float) bpm / MAX_SPEED));
 			printf("Crono Speed: %s %d\n", fSpeedEntry->Text(), bpm);
 			break;

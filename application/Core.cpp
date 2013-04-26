@@ -1,6 +1,5 @@
 /*
  * Copyright (c) Casalinuovo Dario. All rights reserved.
- * Copyright (c) Davide Gessa. All rights reserved.
  * Distributed under the terms of the MIT License for non commercial use.
  *
  * Authors:
@@ -25,6 +24,7 @@ BMediaTrack* kToc = NULL;
 
 size_t kSize = 0;
 size_t kLimit = 0;
+size_t kTicLen = 0;
 
 int sem = 0;
 
@@ -42,29 +42,52 @@ Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 {
 	//printf("playing\n");
 
-	size_t limit = kLimit/gCronoSettings.Speed;
+	kLimit = (size_t)((fileFormat.u.raw_audio.frame_rate
+		*(fileFormat.u.raw_audio.channel_count+1))*60);
 
+	size_t limit = kLimit/gCronoSettings.Speed;
+	kTicLen = fileFormat.u.raw_audio.frame_rate / 1000 * 100;
+
+	printf("%d %d %d\n", limit, kSize, kLimit);
 	if (kSize >= limit) {
 		kSize = kSize-limit;
 		sem = 0;
 	}
 
-	if (sem == 0) {
-		FillFileBuffer((float*)buffer, size);
-		kSize += size;
-		sem = 1;
-	} else if (sem == 1) {
-			//printf("empty\n");
+	 if (sem == 1) {
+			printf("empty\n");
 			memset(buffer, 0, size);
 			kSize += size;
+	} else if (sem == 0) {
+		bool stereo = true;
+
+		switch(gCronoSettings.Engine)
+		{
+			case CRONO_FILE_ENGINE:
+				FillFileBuffer((float*)buffer, size);
+			break;
+
+			case CRONO_DEFAULT_ENGINE:
+			break;
+
+			case CRONO_SINE_ENGINE:
+				FillSineBuffer((float*)buffer, size, stereo);
+			break;
+
+			case CRONO_TRIANGLE_ENGINE:
+				FillTriangleBuffer((float*)buffer, size, stereo);
+			break;
+
+			case CRONO_SAWTOOTH_ENGINE:
+				FillSawtoothBuffer((float*)buffer, size, stereo);
+			break;
+		}
+
+		kSize += size;
+		if (kSize >= kTicLen)
+			sem = 1;
 	}
 	printf("%ld\n", kSize);
-}
-
-
-void
-Core::_PrepareBuffers()
-{
 }
 
 
@@ -73,14 +96,14 @@ Core::Core()
 	:
 	fRunning(false)
 {
-	LoadTicks();
+	Init();
 }
 
 
 // Destroy the class
 Core::~Core()
 {
-	UnloadTicks();
+	Destroy();
 }
 
 
@@ -92,12 +115,67 @@ Core::InitCheck()
 }
 
 
+status_t
+Core::Init() 
+{
+	switch(gCronoSettings.Engine)
+	{
+		case CRONO_FILE_ENGINE:
+			LoadSoundFile();
+		break;
+
+		case CRONO_DEFAULT_ENGINE:
+		case CRONO_SINE_ENGINE:
+		case CRONO_TRIANGLE_ENGINE:
+		case CRONO_SAWTOOTH_ENGINE:
+			LoadGeneratedSounds();
+		break;
+	}
+
+ 	if (fileFormat.type != B_MEDIA_RAW_AUDIO)
+ 		return B_ERROR;
+ 
+	if (kPlayer != NULL)
+		delete kPlayer;
+
+	kPlayer = new BSoundPlayer(&fileFormat.u.raw_audio, 
+		"CronoPlayback", PlayBuffer);
+
+	kPlayer->SetHasData(true);
+
+}
+
+
+status_t
+Core::Destroy() 
+{
+	if (gCronoSettings.Engine == CRONO_FILE_ENGINE)
+		UnloadSoundFile();
+
+	delete kPlayer;
+}
+
+
+status_t
+Core::LoadGeneratedSounds() 
+{
+	fileFormat.type = B_MEDIA_RAW_AUDIO;
+	fileFormat.u.raw_audio.format = media_raw_audio_format::B_AUDIO_FLOAT;
+	fileFormat.u.raw_audio.frame_rate = 44100;
+	fileFormat.u.raw_audio.byte_order = 
+		(B_HOST_IS_BENDIAN) ? B_MEDIA_BIG_ENDIAN : B_MEDIA_LITTLE_ENDIAN;
+
+	fileFormat.u.raw_audio.buffer_size = media_raw_audio_format::wildcard.buffer_size;
+	fileFormat.u.raw_audio.channel_count = media_raw_audio_format::wildcard.channel_count;
+}
+
+
 // Load sound tracks
 status_t
-Core::LoadTicks() 
+Core::LoadSoundFile() 
 {
 	if (kTicFile != NULL && kTocFile != NULL)
-		UnloadTicks();
+		UnloadSoundFile();
 
 	kTicFile = new BMediaFile(
 		new BFile(gCronoSettings.TicLocation, B_READ_ONLY));
@@ -118,22 +196,10 @@ Core::LoadTicks()
 	kTic = kTicFile->TrackAt(0);
 	kToc = kTocFile->TrackAt(0);
 
-
 	fileFormat.type = B_MEDIA_RAW_AUDIO;
 
-	if (kTic != NULL && kTic->EncodedFormat(&fileFormat) == B_OK &&
-		kTic->DecodedFormat(&fileFormat) == B_OK
-			&& fileFormat.type == B_MEDIA_RAW_AUDIO) {
-
-		if (kPlayer != NULL)
-			delete kPlayer;
-
-		kPlayer = new BSoundPlayer(&fileFormat.u.raw_audio, 
-			"CronoPlayback", PlayBuffer);
-
-		kPlayer->SetHasData(true);
-	} else {
-		// Alert
+	if (kTic == NULL && kTic->EncodedFormat(&fileFormat) != B_OK &&
+		kTic->DecodedFormat(&fileFormat) != B_OK) {
 		return B_ERROR;
 	}
 
@@ -154,21 +220,16 @@ Core::LoadTicks()
 
 	delete[] (char*)buffer;
 
-	kLimit = (size_t)(fileFormat.u.raw_audio.frame_rate
-		*(float)(fileFormat.u.raw_audio.channel_count+1))*60;
-
 	return B_OK;
 }
 
 
 // Unload sound tracks
 status_t
-Core::UnloadTicks() 
+Core::UnloadSoundFile() 
 {
 	if (fRunning)
 		Stop();
-
-	delete kPlayer;
 
 	if (kTicFile != NULL && kTicFile->InitCheck() == B_OK)
 		kTicFile->ReleaseAllTracks();
@@ -198,7 +259,7 @@ Core::Start()
 	if (!fRunning) {
 		status_t ret;
 		if (gCronoSettings.LocationsChanged()) {
-			ret = LoadTicks();
+			ret = LoadSoundFile();
 			if (ret != B_OK)
 				return ret;
 		}
@@ -217,7 +278,6 @@ Core::Stop()
 	if (fRunning) {
 		fRunning = false;
 		kPlayer->Stop();
-		buf->Seek(0, SEEK_SET);
 	}
 	return B_OK;
 }
@@ -242,10 +302,8 @@ Core::SetMeter(int32 m)
 void 
 Core::SetVolume(float v)
 {
-	if (v <= 1.0 || v >= 0.0) {
-		kPlayer->SetVolume(v);
-		gCronoSettings.CronoVolume = v;
-	}
+	kPlayer->SetVolume(v);
+	gCronoSettings.CronoVolume = v;
 }
 
 
@@ -273,7 +331,6 @@ Core::Meter()
 void
 Core::FillFileBuffer(float* data, size_t numFrames)
 {
-		//printf("read\n");
 	size_t read = buf->Read(data, numFrames);
 	if (read < numFrames) {
 		buf->Seek(0, SEEK_SET);
@@ -285,14 +342,41 @@ Core::FillFileBuffer(float* data, size_t numFrames)
 }
 
 
+void
+Core::FillSineBuffer2(float* data, size_t numFrames)
+{
+	float* s = data;
+	int scale = -SHRT_MIN < SHRT_MAX ? -SHRT_MIN : SHRT_MAX;
+	int i;
+	double sample;
+	double samplefreq = fileFormat.u.raw_audio.frame_rate;
+	double freq = 880.0;
+	double fadedur = 0.002;
+	double sigdur = 0.01;
+
+	for (i = 0; i < numFrames; i++) {
+		sample = sin((double)i / samplefreq * freq * 2 * M_PI);
+		if (i < samplefreq * fadedur)
+			sample *= (-cos((double)i / (samplefreq * sigdur) * 2 * M_PI) + 1) * 0.5;
+		if (i > samplefreq * (sigdur - fadedur))
+			sample *=
+			(-cos((double)(numFrames - i) / (samplefreq * sigdur) * 2 * M_PI) + 1) * 0.5;
+
+		s[i] = sample * scale;
+		/* ++s;
+		*s = s[i];
+		i++;*/
+	}
+}
+
+
 // Sine, Triangle and Sawtooth methods comes originally 
 // from the ToneProducer example plugin included in Haiku.
 void
 Core::FillSineBuffer(float* data, size_t numFrames, bool stereo)
 {
 	// cover 2pi radians in one period
-	double dTheta = 2*M_PI * double(50) / fileFormat.u.raw_audio.frame_rate;
-
+	double dTheta = 2*M_PI * double(440) / fileFormat.u.raw_audio.frame_rate*2;
 	// Fill the buffer!
 	for (size_t i = 0; i < numFrames; i++, data++) {
 		float val = mGain * float(sin(mTheta));

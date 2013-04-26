@@ -26,7 +26,6 @@ public:
 	virtual void			MessageReceived(BMessage* mesage);
 	virtual bool    		QuitRequested();
 
-
 private:
 			SettingsView*	fSettingsView;
 };
