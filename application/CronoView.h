@@ -35,6 +35,8 @@ const int32 MSG_METER_RADIO			= 0x15;
 const int32 MSG_HELP				= 0x16;
 const int32 MSG_HOMEPAGE			= 0x17;
 
+class _EXPORT RepliView;
+
 
 /**
  * View del metronomo
@@ -42,11 +44,19 @@ const int32 MSG_HOMEPAGE			= 0x17;
 class CronoView : public BView {
 public:
 							CronoView();
+							CronoView(BMessage* archive);
+
 							~CronoView();
+
+			void			AboutRequested();
 			void			AttachedToWindow();	
 	virtual	void			MessageReceived(BMessage* message);
 
+	static 	BArchivable*	Instantiate(BMessage* archive);
+	virtual status_t		Archive(BMessage* data, bool deep = true) const;
+
 private:
+			void			_ConstructView();
 			BMenuBar*		fMenuBar;
 			BMenu*			fHelpMenu;
 			BMenu*			fFileMenu;
@@ -61,6 +71,7 @@ private:
 			BTextControl*	fSpeedEntry;
 			BSlider*		fSpeedSlider;
 			Core*			fCore;
+			bool			fReplicated;
 };
 
 #endif

@@ -14,11 +14,12 @@
 #include <View.h>
 
 #include "Core.h"
+#include "CronoDefaults.h"
 #include "CronoWindow.h"
 
 App::App() 
 	: 
-	BApplication("application/x-vnd.Haiku-Crono")
+	BApplication(CRONO_APP_TYPE)
 {
 	BRect windowRect;
 	windowRect.Set(50,50,410,365);

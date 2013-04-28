@@ -28,4 +28,6 @@ const int32	DEFAULT_METER	= 1;
 // TODO implement it to provide a MIDI metronome
 #define CRONO_MIDI_ENGINE		5
 
+#define CRONO_APP_TYPE "application/x-vnd.Haiku-Crono"
+
 #endif

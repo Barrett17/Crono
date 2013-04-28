@@ -11,6 +11,7 @@
 
 #include <Alert.h>
 #include <Button.h>
+#include <Dragger.h>
 #include <GroupView.h>
 #include <LayoutBuilder.h>
 #include <Menu.h>
@@ -54,18 +55,27 @@ CronoView::CronoView()
 	:
 	BView("CronoView", B_WILL_DRAW, 0)
 {
-	rgb_color barColor = { 0, 0, 240 };
-	rgb_color fillColor = { 240, 0, 0 };
-	
+    fReplicated = false;
+
 	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 
 	// Core
 	fCore = new Core();
 
+	rgb_color barColor = { 0, 0, 240 };
+	rgb_color fillColor = { 240, 0, 0 };
+
+	BRect frame;
+	frame.left = frame.right - 7;
+	frame.top = frame.bottom - 7;
+	BDragger *dragger = new BDragger(frame, this,
+		B_FOLLOW_NONE, B_WILL_DRAW);
+
 	// Menu bar
 	fMenuBar = new BMenuBar("MenuBar");
 
 	fFileMenu = new BMenu("Metronome");
+
 	fFileMenu->AddItem(new BMenuItem("Quit", new BMessage(MSG_CLOSE), 'Q'));
 	fFileMenu->AddItem(new BSeparatorItem);
 	fFileMenu->AddItem(new BMenuItem("Start", new BMessage(MSG_START), 'G'));
@@ -180,6 +190,40 @@ CronoView::CronoView()
 			.Add(meterBox, 3)
 			.Add(buttonGroup, 4)
 		.End();
+
+	AddChild(dragger);
+}
+
+
+CronoView::CronoView(BMessage* archive)
+	:
+	BView(archive)
+{
+	//Replicant stuff
+    fReplicated = true;
+	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+
+	// Core
+	fCore = new Core();
+
+	fMenuBar = new BMenuBar(archive);
+	fHelpMenu = new BMenu(archive);
+	fFileMenu = new BMenu(archive);
+	fEditMenu = new BMenu(archive);
+	fStartButton = new BButton(archive);
+	fStopButton = new BButton(archive);
+	fVolumeSlider = new BSlider(archive);
+	
+	for(int i = 0; i < 5; i++)
+		fMeterRadios[i] = new BRadioButton(archive);
+	fMeterEntry = new BTextControl(archive);
+	fSpeedEntry = new BTextControl(archive);
+	fSpeedSlider = new BSlider(archive);
+
+/*	be_app->Lock();
+	be_app->AddHandler(this);
+	be_app->Unlock();*/
+	fReplicated = true;
 }
 
 
@@ -187,6 +231,39 @@ CronoView::~CronoView()
 {
 	fCore->Stop();
 	delete fCore;
+}
+
+
+void
+CronoView::AboutRequested()
+{
+	BAlert *alert = new BAlert("About Crono", 
+	"\nCrono Metronome V0.1.0\n\n"
+	"Copyright ©2009-2013 Dario Casalinuovo\n\n"
+	"Copyright ©2009-2012 Davide Gessa \n\n"
+	"Crono is a Software Metronome for Haiku\n"
+	"Crono is part of StilNovo - http://www.versut.com/\n"
+	"Released under the terms of the MIT license.\n"
+	"Thanks to Stefano D'Angelo for his invaluable help!",
+	"OK", NULL, NULL, B_WIDTH_FROM_WIDEST, B_EVEN_SPACING, B_INFO_ALERT);
+	alert->Go();
+}
+
+
+status_t
+CronoView::Archive(BMessage* archive, bool deep) const
+{
+    BView::Archive(archive, deep);
+    archive->AddString("add_on", CRONO_APP_TYPE);
+    archive->AddString("class", "CronoView");
+    return B_OK;
+}
+
+
+BArchivable*
+CronoView::Instantiate(BMessage *data)
+{
+    return new CronoView(data);
 }
 
 
@@ -207,7 +284,8 @@ CronoView::AttachedToWindow()
 	fEditMenu->SetTargetForItems(this);
 	fHelpMenu->SetTargetForItems(this);
 
-	Window()->CenterOnScreen();
+	if (!fReplicated)
+		Window()->CenterOnScreen();
 }
 
 
@@ -224,17 +302,7 @@ CronoView::MessageReceived(BMessage *message)
 
 		case MSG_ABOUT:
 		{
-			BAlert *alert = new BAlert("About Crono", 
-			"\nCrono Metronome V0.1.0\n\n"
-			"Copyright ©2009-2013 Dario Casalinuovo\n\n"
-			"Copyright ©2009-2012 Davide Gessa \n\n"
-			"Crono is a Software Metronome for Haiku\n"
-			"Crono is part of StilNovo - http://www.versut.com/\n"
-			"Released under the terms of the MIT license.\n"
-			"Thanks to Stefano D'Angelo for his invaluable help!",
-			"OK", NULL, NULL, B_WIDTH_FROM_WIDEST, B_EVEN_SPACING, B_INFO_ALERT);
-			alert->Go();
-
+			AboutRequested();
 			break;
 		}
 
@@ -320,7 +388,7 @@ CronoView::MessageReceived(BMessage *message)
 			} else {
 				fMeterEntry->SetEnabled(false);
 				fCore->SetMeter(((int) selected + 1));
-			}		
+			}
 			break;
 		}
 
