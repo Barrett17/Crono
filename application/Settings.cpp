@@ -63,8 +63,7 @@ Settings::OpenSettings()
 		Speed = DEFAULT_SPEED;
 		Meter = DEFAULT_METER;
 		CronoVolume = DEFAULT_VOLUME;
-		TicLocation = CRONO_TIC_LOCATION;
-		TocLocation = CRONO_TOC_LOCATION;
+		SoundFileLocation = CRONO_TOC_LOCATION;
 		Engine = CRONO_SINE_ENGINE;
 		return ret;
 	}
@@ -106,9 +105,7 @@ Settings::FlattenSettings()
 bool
 Settings::LocationsChanged()
 {
-	if (TicLocation.ICompare(fTicLocationUndo) != 0)
-		return true;
-	if (TocLocation.ICompare(fTocLocationUndo) != 0)
+	if (SoundFileLocation.ICompare(fSoundFileLocationUndo) != 0)
 		return true;
 
 	return false;
@@ -214,8 +211,7 @@ Settings::_CheckSettings()
 {
 	MakeEmpty();
 
-	WriteSetting("TICLOC", TicLocation);
-	WriteSetting("TOCLOC", TocLocation);
+	WriteSetting("TOCLOC", SoundFileLocation);
 	WriteSetting("SPEED", Speed);
 	WriteSetting("METER", Meter);
 	WriteSetting("VOLUME", CronoVolume);
@@ -226,13 +222,11 @@ Settings::_CheckSettings()
 void
 Settings::_SetTo()
 {
-	ReadSetting("TICLOC", &TicLocation);
-	ReadSetting("TOCLOC", &TocLocation);
+	fSoundFileLocationUndo = SoundFileLocation.String();
+
+	ReadSetting("TOCLOC", &SoundFileLocation);
 	ReadSetting("SPEED", &Speed);
 	ReadSetting("METER", &Meter);
 	ReadSetting("VOLUME", &CronoVolume);
 	ReadSetting("ENGINE", &Engine);
-
-	fTicLocationUndo = TicLocation.String();
-	fTocLocationUndo = TocLocation.String();
 }

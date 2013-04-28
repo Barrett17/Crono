@@ -15,13 +15,13 @@
 #include "SettingsView.h"
 
 
-SettingsWindow::SettingsWindow(BRect frame) 
+SettingsWindow::SettingsWindow(BRect frame, Core* core) 
 	:
 	BWindow(frame, "Settings", B_TITLED_WINDOW,
 		B_NOT_ZOOMABLE)
 {	
 	SetLayout(new BGroupLayout(B_VERTICAL));
-	fSettingsView = new SettingsView();
+	fSettingsView = new SettingsView(core);
 	GetLayout()->AddView(fSettingsView);
 }
 

@@ -53,23 +53,17 @@ static TempoNames gTempoNames[] = {
 
 CronoView::CronoView()
 	:
-	BView("CronoView", B_WILL_DRAW, 0)
+	BView("CronoView", B_WILL_DRAW | B_FULL_UPDATE_ON_RESIZE)
 {
     fReplicated = false;
-
-	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 
 	// Core
 	fCore = new Core();
 
+	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+
 	rgb_color barColor = { 0, 0, 240 };
 	rgb_color fillColor = { 240, 0, 0 };
-
-	BRect frame;
-	frame.left = frame.right - 7;
-	frame.top = frame.bottom - 7;
-	BDragger *dragger = new BDragger(frame, this,
-		B_FOLLOW_NONE, B_WILL_DRAW);
 
 	// Menu bar
 	fMenuBar = new BMenuBar("MenuBar");
@@ -182,6 +176,14 @@ CronoView::CronoView()
 	fStopButton = new BButton("Stop", new BMessage(MSG_STOP));							
 	buttonGroup->GroupLayout()->AddView(fStopButton);
 
+	// Dragger
+	BRect frame(Bounds());
+	frame.left = frame.right - 7;
+	frame.top = frame.bottom - 7;
+	BDragger *dragger = new BDragger(frame, this,
+		B_FOLLOW_RIGHT | B_FOLLOW_TOP); 
+
+	// Create view
 	BLayoutBuilder::Group<>(this, B_VERTICAL, 5)
 		.AddGroup(B_VERTICAL)
 			.Add(fMenuBar, 0)
@@ -189,9 +191,8 @@ CronoView::CronoView()
 			.Add(speedBox, 2)
 			.Add(meterBox, 3)
 			.Add(buttonGroup, 4)
+			//.Add(dragger, 5)
 		.End();
-
-	AddChild(dragger);
 }
 
 
@@ -199,8 +200,8 @@ CronoView::CronoView(BMessage* archive)
 	:
 	BView(archive)
 {
-	//Replicant stuff
     fReplicated = true;
+
 	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 
 	// Core
@@ -323,7 +324,7 @@ CronoView::MessageReceived(BMessage *message)
 		case MSG_SETTINGS:
 		{
 			BRect windowRect(150,150,440,425);
-			SettingsWindow *settWindow = new SettingsWindow(windowRect);
+			SettingsWindow *settWindow = new SettingsWindow(windowRect, fCore);
 			settWindow->Show();
 			break;
 		}

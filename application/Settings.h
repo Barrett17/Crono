@@ -27,8 +27,7 @@ virtual					~Settings();
 
 		bool			LocationsChanged();
 
-		BString			TicLocation;
-		BString			TocLocation;
+		BString			SoundFileLocation;
 
 		int32 			Speed;
 		int32 			Meter;
@@ -55,11 +54,7 @@ protected:
 		status_t		RemoveSetting(const char* name);
 
 private:
-		// Well, probably in future there will be need of a better
-		// undo mechanism, for now it's ok, but if you want, 
-		// feel free to submit a patch ; )
-		const char*		fTicLocationUndo;
-		const char*		fTocLocationUndo;
+		const char*		fSoundFileLocationUndo;
 
 		void			_CheckSettings();
 		void			_SetTo();

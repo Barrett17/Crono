@@ -16,11 +16,9 @@
 
 BSoundPlayer* kPlayer = NULL;
 
-BMediaFile* kTicFile = NULL;
-BMediaFile* kTocFile = NULL;
+BMediaFile* kSoundFile = NULL;
 
-BMediaTrack* kTic = NULL;
-BMediaTrack* kToc = NULL;
+BMediaTrack* kSound = NULL;
 
 size_t kSize = 0;
 size_t kLimit = 0;
@@ -30,7 +28,7 @@ int sem = 0;
 
 BMallocIO* buf;
 
-double mTheta = 0;
+double mTheta = 2;
 media_format fileFormat;
 bool mWaveAscending = false;
 double mGain = 1;
@@ -153,6 +151,7 @@ Core::Destroy()
 		UnloadSoundFile();
 
 	delete kPlayer;
+	kPlayer = NULL;
 }
 
 
@@ -174,44 +173,35 @@ Core::LoadGeneratedSounds()
 status_t
 Core::LoadSoundFile() 
 {
-	if (kTicFile != NULL && kTocFile != NULL)
+	if (kSoundFile != NULL)
 		UnloadSoundFile();
 
-	kTicFile = new BMediaFile(
-		new BFile(gCronoSettings.TicLocation, B_READ_ONLY));
+	kSoundFile = new BMediaFile(
+		new BFile(gCronoSettings.SoundFileLocation, B_READ_ONLY));
 
-	if (kTicFile->InitCheck() != B_OK) {
+	if (kSoundFile->InitCheck() != B_OK) {
 		printf("Error initializing the first File.");
 		return B_ERROR;
 	}
 
-	kTocFile = new BMediaFile(
-		new BFile(gCronoSettings.TocLocation, B_READ_ONLY));
-
-	if (kTocFile->InitCheck() != B_OK) {
-		printf("Error initializing the second File.");
-		return B_ERROR;
-	}
-
-	kTic = kTicFile->TrackAt(0);
-	kToc = kTocFile->TrackAt(0);
+	kSound = kSoundFile->TrackAt(0);
 
 	fileFormat.type = B_MEDIA_RAW_AUDIO;
 
-	if (kTic == NULL && kTic->EncodedFormat(&fileFormat) != B_OK &&
-		kTic->DecodedFormat(&fileFormat) != B_OK) {
+	if (kSound != NULL && kSound->EncodedFormat(&fileFormat) != B_OK &&
+		kSound->DecodedFormat(&fileFormat) != B_OK) {
 		return B_ERROR;
 	}
 
 	buf = new BMallocIO();
-	buf->SetSize(kTic->CountFrames()*2);
+	buf->SetSize(kSound->CountFrames()*2);
 	void* buffer = new char[fileFormat.u.raw_audio.buffer_size];
 
 	int64 frames;
 	status_t ret;
-	for (frames = 0; frames < kTic->CountFrames();) {
+	for (frames = 0; frames < kSound->CountFrames();) {
 		int64 count;
-		ret = kTic->ReadFrames(buffer, &count);
+		ret = kSound->ReadFrames(buffer, &count);
 		if (ret != B_OK)
 			break;
 		frames += count;
@@ -231,20 +221,14 @@ Core::UnloadSoundFile()
 	if (fRunning)
 		Stop();
 
-	if (kTicFile != NULL && kTicFile->InitCheck() == B_OK)
-		kTicFile->ReleaseAllTracks();
+	if (kSoundFile != NULL && kSoundFile->InitCheck() == B_OK)
+		kSoundFile->ReleaseAllTracks();
 
-	if (kTocFile != NULL && kTocFile->InitCheck() == B_OK)
-		kTocFile->ReleaseAllTracks();
+	delete kSoundFile;
 
-	delete kTicFile;
-	delete kTocFile;
+	kSoundFile = NULL;
 
-	kTicFile = NULL;
-	kTocFile = NULL;
-
-	kTic = NULL;
-	kToc = NULL;
+	kSound = NULL;
 
 	delete buf;
 
@@ -258,11 +242,11 @@ Core::Start()
 {
 	if (!fRunning) {
 		status_t ret;
-		if (gCronoSettings.LocationsChanged()) {
+		/*if (gCronoSettings.LocationsChanged()) {
 			ret = LoadSoundFile();
 			if (ret != B_OK)
 				return ret;
-		}
+		}*/
 		fRunning = true;
 		kPlayer->SetVolume(gCronoSettings.CronoVolume);
 		return kPlayer->Start();
@@ -314,6 +298,18 @@ Core::Volume()
 }
 
 
+void
+Core::SetEngine(int32 engine)
+{
+	if (engine == gCronoSettings.Engine)
+		return;
+
+	Destroy();
+	gCronoSettings.Engine = engine;
+	Init();
+}
+
+
 int32
 Core::Speed()
 {
@@ -325,6 +321,13 @@ int32
 Core::Meter()
 {
 	return gCronoSettings.Meter;	
+}
+
+
+int32
+Core::Engine()
+{
+	return gCronoSettings.Engine;	
 }
 
 

@@ -18,6 +18,8 @@
 #include <TextControl.h>
 #include <View.h>
 
+#include "Core.h"
+
 const int32 MSG_DEFAULTS 	= 0xA1;
 const int32 MSG_REVERT	 	= 0xA2;
 const int32 MSG_SET		 	= 0xA3;
@@ -26,22 +28,23 @@ const int32 MSG_SET_ENGINE	= 0xA4;
 
 class SettingsView : public BView {
 public:
-							SettingsView();
+							SettingsView(Core* core);
 							~SettingsView();
-			void			AttachedToWindow();	
+			void			AttachedToWindow();
 	virtual	void			MessageReceived(BMessage* message);
 
 private:
 			void			_UpdateData();
+			BMessage*		_ButtonMsg(int32 engineval);
+			void			_SetEngine(int32 engine);
 
-			BRadioButton*	fFileEngine;
-			BRadioButton*	fSineEngine;
-			BRadioButton*	fTriangleEngine;
-			BRadioButton*	fSawtoothEngine;
-			
-			BTextControl*	fTocSoundEntry;
+			BRadioButton*	fEngines[4];
+
+			BTextControl*	fSoundEntry;
 			BButton*		fDefaultsButton;
 			BButton*		fRevertButton;
+
+			Core*			fCore;
 };
 
 #endif

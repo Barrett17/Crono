@@ -17,11 +17,14 @@
 
 #include "CronoDefaults.h"
 
+#include <stdio.h>
+
 // TODO should save settings on window close.
 
-SettingsView::SettingsView()
+SettingsView::SettingsView(Core* core)
 	:
-	BView("SettingsView", B_WILL_DRAW, 0)
+	BView("SettingsView", B_WILL_DRAW, 0),
+	fCore(core)
 {
 	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 
@@ -33,27 +36,28 @@ SettingsView::SettingsView()
 	audioLayout->SetInsets(10, audioBox->TopBorderOffset() * 2 + 10, 10, 10);
 	audioBox->SetLayout(audioLayout);
 
-	fSineEngine = new BRadioButton("sine", "Sine",
-		new BMessage(MSG_SET_ENGINE));
-	audioLayout->AddView(fSineEngine);
+	fEngines[0] = new BRadioButton("sine", "Sine",
+		_ButtonMsg(CRONO_SINE_ENGINE));
+	audioLayout->AddView(fEngines[0]);
 
-	fTriangleEngine = new BRadioButton("triangle", "Triangle",
-		new BMessage(MSG_SET_ENGINE));
-	audioLayout->AddView(fTriangleEngine);
+	fEngines[1] = new BRadioButton("triangle", "Triangle",
+		_ButtonMsg(CRONO_TRIANGLE_ENGINE));
+	audioLayout->AddView(fEngines[1]);
 
-	fSawtoothEngine = new BRadioButton("sawtooth", "Sawtooth",
-		new BMessage(MSG_SET_ENGINE));
-	audioLayout->AddView(fSawtoothEngine);
+	fEngines[2] = new BRadioButton("sawtooth", "Sawtooth",
+		_ButtonMsg(CRONO_SAWTOOTH_ENGINE));
+	audioLayout->AddView(fEngines[2]);
 
-	fFileEngine = new BRadioButton("file", "File Engine",
-		new BMessage(MSG_SET_ENGINE));
-	audioLayout->AddView(fFileEngine);
+	fEngines[3] = new BRadioButton("file", "File Engine",
+		_ButtonMsg(CRONO_FILE_ENGINE));
+	audioLayout->AddView(fEngines[3]);
 
-	fTocSoundEntry = new BTextControl("Soundfile", "Soundfile",
-		gCronoSettings.TocLocation, new BMessage(MSG_SET), B_WILL_DRAW);
-	fTocSoundEntry->SetDivider(70);
-	fTocSoundEntry->SetAlignment(B_ALIGN_CENTER, B_ALIGN_CENTER);
-	audioLayout->AddView(fTocSoundEntry);
+	fSoundEntry = new BTextControl("Soundfile", "Soundfile",
+		gCronoSettings.SoundFileLocation, new BMessage(MSG_SET), B_WILL_DRAW);
+	fSoundEntry->SetDivider(70);
+	fSoundEntry->SetAlignment(B_ALIGN_CENTER, B_ALIGN_CENTER);
+	audioLayout->AddView(fSoundEntry);
+	fSoundEntry->SetEnabled(false);
 
 	fDefaultsButton = new BButton("Defaults", new BMessage(MSG_DEFAULTS));
 	fRevertButton = new BButton("Revert", new BMessage(MSG_REVERT));
@@ -66,6 +70,8 @@ SettingsView::SettingsView()
 			.Add(fDefaultsButton, 0)
 			.Add(fRevertButton, 1)
 		.End();
+
+	_SetEngine(fCore->Engine());
 }
 
 
@@ -81,8 +87,11 @@ SettingsView::AttachedToWindow()
 {
 	fDefaultsButton->SetTarget(this);
 	fRevertButton->SetTarget(this);
-	fTocSoundEntry->SetTarget(this);	
-	
+	fSoundEntry->SetTarget(this);	
+
+	for (int i = 0; i < 4; i++)
+		fEngines[i]->SetTarget(this);
+
 	Window()->CenterOnScreen();
 }
 
@@ -95,7 +104,16 @@ SettingsView::MessageReceived(BMessage *message)
 		case MSG_REVERT:
 		case MSG_DEFAULTS:
 		{
-			fTocSoundEntry->SetText(CRONO_TOC_LOCATION);
+			fSoundEntry->SetText(CRONO_TOC_LOCATION);
+			_SetEngine(CRONO_SINE_ENGINE);
+		}
+		break;
+
+		case MSG_SET_ENGINE:
+		{
+			int32 engine = 0;
+			message->FindInt32("engineval", &engine);
+			_SetEngine(engine);
 		}
 		break;
 
@@ -112,6 +130,37 @@ SettingsView::MessageReceived(BMessage *message)
 void
 SettingsView::_UpdateData()
 {
-	gCronoSettings.TocLocation.SetTo(
-		fTocSoundEntry->Text());
+	gCronoSettings.SoundFileLocation.SetTo(
+		fSoundEntry->Text());
+}
+
+
+BMessage*
+SettingsView::_ButtonMsg(int32 engineval)
+{
+	BMessage* msg = new BMessage(MSG_SET_ENGINE);
+	msg->AddInt32("engineval", engineval);
+	return msg;
+}
+
+
+void
+SettingsView::_SetEngine(int32 engine) {
+	if (engine != fCore->Engine())
+		fCore->SetEngine(engine);
+
+	if (engine == CRONO_FILE_ENGINE)
+		fSoundEntry->SetEnabled(true);
+	else
+		fSoundEntry->SetEnabled(false);
+
+	for (int i = 0; i < 4; i++) {
+		if (i != engine) {
+			fEngines[i]->SetEnabled(true);
+			fEngines[i]->SetValue(0);
+			continue;
+		}
+		fEngines[i]->SetValue(1);
+		fEngines[i]->SetEnabled(false);
+	}
 }

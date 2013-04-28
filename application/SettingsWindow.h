@@ -14,6 +14,7 @@
 #include <Window.h>
 #include <View.h>
 
+#include "Core.h"
 #include "SettingsView.h"
 
 
@@ -22,7 +23,7 @@
  */
 class SettingsWindow : public BWindow {
 public:
-							SettingsWindow(BRect frame);
+							SettingsWindow(BRect frame, Core* core);
 	virtual void			MessageReceived(BMessage* mesage);
 	virtual bool    		QuitRequested();
 

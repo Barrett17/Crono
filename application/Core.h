@@ -39,10 +39,12 @@ public:
 			void 		SetSpeed(int32 speed);
 			void 		SetMeter(int32 meter);
 			void 		SetVolume(float volume);
-	
+			void		SetEngine(int32 engine);
+
 			int32		Speed();
 			int32 		Meter();
 			float		Volume();
+			int32		Engine();
 
 	static	void		PlayBuffer(void* cookie, void* buffer, size_t size,
 							const media_raw_audio_format& format);
