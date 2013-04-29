@@ -43,17 +43,17 @@ Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 	kLimit = (size_t)((fileFormat.u.raw_audio.frame_rate
 		*(fileFormat.u.raw_audio.channel_count+1))*60);
 
-	size_t limit = kLimit/gCronoSettings.Speed;
-	kTicLen = fileFormat.u.raw_audio.frame_rate / 1000 * 100;
+	size_t limit = (kLimit/gCronoSettings.Speed)*10;
+	kTicLen = fileFormat.u.raw_audio.frame_rate / 10;
 
-	printf("%d %d %d\n", limit, kSize, kLimit);
+	//printf("%d %d %d\n", limit, kSize, kLimit);
 	if (kSize >= limit) {
 		kSize = kSize-limit;
 		sem = 0;
 	}
 
 	 if (sem == 1) {
-			printf("empty\n");
+			//printf("empty\n");
 			memset(buffer, 0, size);
 			kSize += size;
 	} else if (sem == 0) {
@@ -69,7 +69,7 @@ Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 			break;
 
 			case CRONO_SINE_ENGINE:
-				FillSineBuffer((float*)buffer, size, stereo);
+				FillSineBuffer2((float*)buffer, size);
 			break;
 
 			case CRONO_TRIANGLE_ENGINE:
@@ -85,7 +85,7 @@ Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 		if (kSize >= kTicLen)
 			sem = 1;
 	}
-	printf("%ld\n", kSize);
+	//printf("%ld\n", kSize);
 }
 
 
@@ -291,13 +291,6 @@ Core::SetVolume(float v)
 }
 
 
-float
-Core::Volume()
-{
-	return gCronoSettings.CronoVolume;	
-}
-
-
 void
 Core::SetEngine(int32 engine)
 {
@@ -307,6 +300,13 @@ Core::SetEngine(int32 engine)
 	Destroy();
 	gCronoSettings.Engine = engine;
 	Init();
+}
+
+
+float
+Core::Volume()
+{
+	return gCronoSettings.CronoVolume;	
 }
 
 
@@ -353,7 +353,7 @@ Core::FillSineBuffer2(float* data, size_t numFrames)
 	int i;
 	double sample;
 	double samplefreq = fileFormat.u.raw_audio.frame_rate;
-	double freq = 880.0;
+	double freq = 440.0;
 	double fadedur = 0.002;
 	double sigdur = 0.01;
 
