@@ -65,6 +65,7 @@ Settings::OpenSettings()
 		CronoVolume = DEFAULT_VOLUME;
 		SoundFileLocation = CRONO_TOC_LOCATION;
 		Engine = CRONO_SINE_ENGINE;
+		AccentTable = false;
 		return ret;
 	}
 

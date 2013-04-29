@@ -32,8 +32,9 @@ const int32 MSG_SPEED_SLIDER		= 0x12;
 const int32 MSG_SPEED_ENTRY			= 0x13;
 const int32 MSG_METER_ENTRY			= 0x14;
 const int32 MSG_METER_RADIO			= 0x15;
-const int32 MSG_HELP				= 0x16;
-const int32 MSG_HOMEPAGE			= 0x17;
+const int32 MSG_ACCENT_TABLE		= 0x16;
+const int32 MSG_HELP				= 0x17;
+const int32 MSG_HOMEPAGE			= 0x18;
 
 class _EXPORT RepliView;
 
@@ -57,10 +58,13 @@ public:
 
 private:
 			void			_ConstructView();
+			void			_UpdateTempoName(int32 value);
+
 			BMenuBar*		fMenuBar;
 			BMenu*			fHelpMenu;
 			BMenu*			fFileMenu;
 			BMenu*			fEditMenu;
+			BMenu*			fShowMenu;
 			BButton*		fStartButton;
 			BButton*		fStopButton;
 			BSlider*		fVolumeSlider;

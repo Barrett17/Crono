@@ -48,6 +48,7 @@ static TempoNames gTempoNames[] = {
 	{ 140, 167, "Vivace" },
 	{ 168, 200, "Presto" },
 	{ 201, 500, "Prestissimo" },
+	{ 0, 0, NULL }
 };
 
 
@@ -78,6 +79,17 @@ CronoView::CronoView()
 	
 	fEditMenu = new BMenu("Edit");
 	fEditMenu->AddItem(new BMenuItem("Settings", new BMessage(MSG_SETTINGS), 'S'));
+	fEditMenu->AddItem(new BSeparatorItem);
+
+	fShowMenu = new BMenu("Show");
+	fEditMenu->AddItem(fShowMenu);
+	
+	BMenuItem* item = new BMenuItem("Visual Metronome", NULL, 0);
+	item->SetEnabled(false);
+	fShowMenu->AddItem(item);
+	fShowMenu->AddItem(new BMenuItem("Show accents table", 
+		new BMessage(MSG_ACCENT_TABLE), 0));
+
 	fMenuBar->AddItem(fEditMenu);
 
 	fHelpMenu = new BMenu("Help");
@@ -239,13 +251,16 @@ void
 CronoView::AboutRequested()
 {
 	BAlert *alert = new BAlert("About Crono", 
-	"\nCrono Metronome V0.1.0\n\n"
+	"\nCrono Metronome v1.0 Alpha1\n"
 	"Copyright ©2009-2013 Dario Casalinuovo\n\n"
-	"Copyright ©2009-2012 Davide Gessa \n\n"
+	"Copyright ©2009-2013 Davide Gessa \n\n"
 	"Crono is a Software Metronome for Haiku\n"
-	"Crono is part of StilNovo - http://www.versut.com/\n"
-	"Released under the terms of the MIT license.\n"
-	"Thanks to Stefano D'Angelo for his invaluable help!",
+	"Crono is part of StilNovo - http://www.versut.com/\n\n"
+	"Written By:\n"
+	"Dario Casalinuovo (GUI, Core)\n"
+	"Davide Gessa (GUI)\n\n"
+	"Released under the terms of the MIT license.\n\n"
+	"Special Thanks :\n Stefano D'Angelo",
 	"OK", NULL, NULL, B_WIDTH_FROM_WIDEST, B_EVEN_SPACING, B_INFO_ALERT);
 	alert->Go();
 }
@@ -281,9 +296,11 @@ CronoView::AttachedToWindow()
 	
 	fSpeedEntry->SetTarget(this);
 	fSpeedSlider->SetTarget(this);
+
 	fFileMenu->SetTargetForItems(this);
 	fEditMenu->SetTargetForItems(this);
 	fHelpMenu->SetTargetForItems(this);
+	fShowMenu->SetTargetForItems(this);
 
 	if (!fReplicated)
 		Window()->CenterOnScreen();
@@ -323,7 +340,7 @@ CronoView::MessageReceived(BMessage *message)
 
 		case MSG_SETTINGS:
 		{
-			BRect windowRect(150,150,440,425);
+			BRect windowRect(150,150,460,445);
 			SettingsWindow *settWindow = new SettingsWindow(windowRect, fCore);
 			settWindow->Show();
 			break;
@@ -415,24 +432,42 @@ CronoView::MessageReceived(BMessage *message)
 			fCore->SetSpeed(((int) bpm));
 			fSpeedSlider->SetPosition(((float) bpm / MAX_SPEED));
 			printf("Crono Speed: %s %d\n", fSpeedEntry->Text(), bpm);
+			_UpdateTempoName(bpm);
 			break;
 		}
 
 		case MSG_SPEED_SLIDER:
 		{
-			float v = (float)fSpeedSlider->Value();
-
-			if (v == 0)
-				v = 1;
+			int v = fSpeedSlider->Value();
 
 			char strv[32];
-			sprintf(strv, "%d", (int) v);
+			sprintf(strv, "%d", v);
 			fSpeedEntry->SetText(strv);
-			fCore->SetSpeed((int) v);
+			fCore->SetSpeed(v);
+			_UpdateTempoName(60);
+			break;
+		}
+
+		case MSG_ACCENT_TABLE:
+		{
+			bool val = gCronoSettings.AccentTable;
+			gCronoSettings.AccentTable = !val;
 			break;
 		}
 
 		default:
 			BView::MessageReceived(message);
+	}
+}
+
+
+void
+CronoView::_UpdateTempoName(int32 value)
+{
+	for (int i = 0; gTempoNames[i].name != NULL; i++) {
+		if (value <= gTempoNames[i].max && value >= gTempoNames[i].min) {
+			fSpeedSlider->SetLabel(gTempoNames[i].name);
+			return;
+		}
 	}
 }
