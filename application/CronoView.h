@@ -10,6 +10,8 @@
 #ifndef CRONO_VIEW_H
 #define CRONO_VIEW_H
 
+#include <CheckBox.h>
+#include <ObjectList.h>
 #include <SupportDefs.h>
 #include <View.h>
 
@@ -57,8 +59,9 @@ public:
 	virtual status_t		Archive(BMessage* data, bool deep = true) const;
 
 private:
-			void			_ConstructView();
 			void			_UpdateTempoName(int32 value);
+			int				_GetCurrentMeter();
+			void			_SetAccentCheckBox(int value);
 
 			BMenuBar*		fMenuBar;
 			BMenu*			fHelpMenu;
@@ -76,6 +79,8 @@ private:
 			BSlider*		fSpeedSlider;
 			Core*			fCore;
 			bool			fReplicated;
+
+			BObjectList<BCheckBox*> fMeterList;
 };
 
 #endif

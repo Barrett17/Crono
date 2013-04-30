@@ -87,8 +87,12 @@ CronoView::CronoView()
 	BMenuItem* item = new BMenuItem("Visual Metronome", NULL, 0);
 	item->SetEnabled(false);
 	fShowMenu->AddItem(item);
-	fShowMenu->AddItem(new BMenuItem("Show accents table", 
-		new BMessage(MSG_ACCENT_TABLE), 0));
+
+	item = new BMenuItem("Show accents table", 
+		new BMessage(MSG_ACCENT_TABLE), 0);
+
+	fShowMenu->AddItem(item);
+	item->SetMarked(gCronoSettings.AccentTable);
 
 	fMenuBar->AddItem(fEditMenu);
 
@@ -188,12 +192,14 @@ CronoView::CronoView()
 	fStopButton = new BButton("Stop", new BMessage(MSG_STOP));							
 	buttonGroup->GroupLayout()->AddView(fStopButton);
 
+#ifdef CRONO_REPLICANT_ACTIVE
 	// Dragger
 	BRect frame(Bounds());
 	frame.left = frame.right - 7;
 	frame.top = frame.bottom - 7;
 	BDragger *dragger = new BDragger(frame, this,
 		B_FOLLOW_RIGHT | B_FOLLOW_TOP); 
+#endif
 
 	// Create view
 	BLayoutBuilder::Group<>(this, B_VERTICAL, 5)
@@ -203,7 +209,9 @@ CronoView::CronoView()
 			.Add(speedBox, 2)
 			.Add(meterBox, 3)
 			.Add(buttonGroup, 4)
-			//.Add(dragger, 5)
+#ifdef CRONO_REPLICANT_ACTIVE
+			.Add(dragger, 5)
+#endif
 		.End();
 }
 
@@ -393,27 +401,33 @@ CronoView::MessageReceived(BMessage *message)
 
 		case MSG_METER_RADIO:
 		{
-			int selected = 0;
-			// Get the selected radiobutton
-			for (int i = 0; i < 5; i++) {
-				if (fMeterRadios[i]->Value())
-					selected = i;
-			}
+			int selected = _GetCurrentMeter();
 
 			// If "Other" is selected, enable the fMeterEntry
 			if (selected == 4) {
 				fMeterEntry->SetEnabled(true);
 			} else {
 				fMeterEntry->SetEnabled(false);
-				fCore->SetMeter(((int) selected + 1));
+				fCore->SetMeter(selected + 1);
 			}
+			_SetAccentCheckBox(selected);
 			break;
 		}
 
 		case MSG_METER_ENTRY:
 		{
-			unsigned position = abs(atoi(fMeterEntry->Text()));
-			fCore->SetMeter(((int) position));
+			int position = abs(atoi(fMeterEntry->Text()));
+			if (position < 1) {
+				fMeterEntry->SetText("1");
+				position = 1;
+				return;
+			} else if (position > 100) {
+				fMeterEntry->SetText("100");
+				position = 100;		
+			}
+
+			fCore->SetMeter(position);
+			_SetAccentCheckBox(position);
 			break;
 		}
 
@@ -424,7 +438,7 @@ CronoView::MessageReceived(BMessage *message)
 			if (bpm > MAX_SPEED) {
 				fSpeedEntry->SetText(BString() << MAX_SPEED);
 				bpm = MAX_SPEED;
-			} else if(bpm < MIN_SPEED) {
+			} else if (bpm < MIN_SPEED) {
 				fSpeedEntry->SetText(BString() << MIN_SPEED);
 				bpm = MIN_SPEED;
 			}
@@ -440,18 +454,24 @@ CronoView::MessageReceived(BMessage *message)
 		{
 			int v = fSpeedSlider->Value();
 
-			char strv[32];
-			sprintf(strv, "%d", v);
-			fSpeedEntry->SetText(strv);
+			BString str;
+			fSpeedEntry->SetText(str << v);
 			fCore->SetSpeed(v);
-			_UpdateTempoName(60);
+			_UpdateTempoName(v);
 			break;
 		}
 
 		case MSG_ACCENT_TABLE:
 		{
-			bool val = gCronoSettings.AccentTable;
-			gCronoSettings.AccentTable = !val;
+			BMenuItem* item = fShowMenu->FindItem(MSG_ACCENT_TABLE);
+			if (item == NULL)
+				return;
+
+			bool marked = !item->IsMarked();
+			item->SetMarked(marked);
+			gCronoSettings.AccentTable = marked;
+			int meter = _GetCurrentMeter();
+			_SetAccentCheckBox(meter);
 			break;
 		}
 
@@ -469,5 +489,33 @@ CronoView::_UpdateTempoName(int32 value)
 			fSpeedSlider->SetLabel(gTempoNames[i].name);
 			return;
 		}
+	}
+}
+
+
+int
+CronoView::_GetCurrentMeter()
+{
+	int radioSelected = 0;
+	// Get the selected radiobutton
+	for (int i = 0; i < 5; i++) {
+		if (fMeterRadios[i]->Value())
+			radioSelected = i;
+	}
+
+	if (radioSelected == 4) {
+		radioSelected = abs(atoi(fMeterEntry->Text()));
+	}
+	return radioSelected;
+}
+
+
+void
+CronoView::_SetAccentCheckBox(int value)
+{
+	if (value < fMeterList.CountItems()) {
+	
+	} else if (value > fMeterList.CountItems()) {
+	
 	}
 }

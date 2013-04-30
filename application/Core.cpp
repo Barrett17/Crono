@@ -349,7 +349,8 @@ void
 Core::FillSineBuffer2(float* data, size_t numFrames)
 {
 	float* s = data;
-	int scale = -SHRT_MIN < SHRT_MAX ? -SHRT_MIN : SHRT_MAX;
+	//int scale = -SHRT_MIN < SHRT_MAX ? -SHRT_MIN : SHRT_MAX;
+	int scale = 3;
 	int i;
 	double sample;
 	double samplefreq = fileFormat.u.raw_audio.frame_rate;

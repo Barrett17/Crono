@@ -29,6 +29,8 @@ virtual					~Settings();
 
 		int32 			Speed;
 		int32 			Meter;
+		int32			MeterOther;
+
 		float			CronoVolume;
 		int32			Engine;
 		bool			AccentTable;
