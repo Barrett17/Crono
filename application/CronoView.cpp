@@ -48,6 +48,7 @@ static TempoNames gTempoNames[] = {
 	{ 140, 167, "Vivace" },
 	{ 168, 200, "Presto" },
 	{ 201, 500, "Prestissimo" },
+	{ 0, 0, NULL }
 };
 
 
@@ -78,6 +79,21 @@ CronoView::CronoView()
 	
 	fEditMenu = new BMenu("Edit");
 	fEditMenu->AddItem(new BMenuItem("Settings", new BMessage(MSG_SETTINGS), 'S'));
+	fEditMenu->AddItem(new BSeparatorItem);
+
+	fShowMenu = new BMenu("Show");
+	fEditMenu->AddItem(fShowMenu);
+	
+	BMenuItem* item = new BMenuItem("Visual Metronome", NULL, 0);
+	item->SetEnabled(false);
+	fShowMenu->AddItem(item);
+
+	item = new BMenuItem("Show accents table", 
+		new BMessage(MSG_ACCENT_TABLE), 0);
+
+	fShowMenu->AddItem(item);
+	item->SetMarked(gCronoSettings.AccentTable);
+
 	fMenuBar->AddItem(fEditMenu);
 
 	fHelpMenu = new BMenu("Help");
@@ -176,12 +192,14 @@ CronoView::CronoView()
 	fStopButton = new BButton("Stop", new BMessage(MSG_STOP));							
 	buttonGroup->GroupLayout()->AddView(fStopButton);
 
+#ifdef CRONO_REPLICANT_ACTIVE
 	// Dragger
 	BRect frame(Bounds());
 	frame.left = frame.right - 7;
 	frame.top = frame.bottom - 7;
 	BDragger *dragger = new BDragger(frame, this,
 		B_FOLLOW_RIGHT | B_FOLLOW_TOP); 
+#endif
 
 	// Create view
 	BLayoutBuilder::Group<>(this, B_VERTICAL, 5)
@@ -191,7 +209,9 @@ CronoView::CronoView()
 			.Add(speedBox, 2)
 			.Add(meterBox, 3)
 			.Add(buttonGroup, 4)
-			//.Add(dragger, 5)
+#ifdef CRONO_REPLICANT_ACTIVE
+			.Add(dragger, 5)
+#endif
 		.End();
 }
 
@@ -239,13 +259,16 @@ void
 CronoView::AboutRequested()
 {
 	BAlert *alert = new BAlert("About Crono", 
-	"\nCrono Metronome V0.1.0\n\n"
+	"\nCrono Metronome v1.0 Alpha1\n"
 	"Copyright ©2009-2013 Dario Casalinuovo\n\n"
-	"Copyright ©2009-2012 Davide Gessa \n\n"
+	"Copyright ©2009-2013 Davide Gessa \n\n"
 	"Crono is a Software Metronome for Haiku\n"
-	"Crono is part of StilNovo - http://www.versut.com/\n"
-	"Released under the terms of the MIT license.\n"
-	"Thanks to Stefano D'Angelo for his invaluable help!",
+	"http://www.versut.com/\n\n"
+	"Written By:\n"
+	"Dario Casalinuovo (GUI, Core)\n"
+	"Davide Gessa (GUI)\n\n"
+	"Released under the terms of the MIT license.\n\n"
+	"Special Thanks :\n Stefano D'Angelo",
 	"OK", NULL, NULL, B_WIDTH_FROM_WIDEST, B_EVEN_SPACING, B_INFO_ALERT);
 	alert->Go();
 }
@@ -281,9 +304,11 @@ CronoView::AttachedToWindow()
 	
 	fSpeedEntry->SetTarget(this);
 	fSpeedSlider->SetTarget(this);
+
 	fFileMenu->SetTargetForItems(this);
 	fEditMenu->SetTargetForItems(this);
 	fHelpMenu->SetTargetForItems(this);
+	fShowMenu->SetTargetForItems(this);
 
 	if (!fReplicated)
 		Window()->CenterOnScreen();
@@ -323,7 +348,7 @@ CronoView::MessageReceived(BMessage *message)
 
 		case MSG_SETTINGS:
 		{
-			BRect windowRect(150,150,440,425);
+			BRect windowRect(150,150,460,445);
 			SettingsWindow *settWindow = new SettingsWindow(windowRect, fCore);
 			settWindow->Show();
 			break;
@@ -376,27 +401,33 @@ CronoView::MessageReceived(BMessage *message)
 
 		case MSG_METER_RADIO:
 		{
-			int selected = 0;
-			// Get the selected radiobutton
-			for (int i = 0; i < 5; i++) {
-				if (fMeterRadios[i]->Value())
-					selected = i;
-			}
+			int selected = _GetCurrentMeter();
 
 			// If "Other" is selected, enable the fMeterEntry
 			if (selected == 4) {
 				fMeterEntry->SetEnabled(true);
 			} else {
 				fMeterEntry->SetEnabled(false);
-				fCore->SetMeter(((int) selected + 1));
+				fCore->SetMeter(selected + 1);
 			}
+			_SetAccentCheckBox(selected);
 			break;
 		}
 
 		case MSG_METER_ENTRY:
 		{
-			unsigned position = abs(atoi(fMeterEntry->Text()));
-			fCore->SetMeter(((int) position));
+			int position = abs(atoi(fMeterEntry->Text()));
+			if (position < 1) {
+				fMeterEntry->SetText("1");
+				position = 1;
+				return;
+			} else if (position > 100) {
+				fMeterEntry->SetText("100");
+				position = 100;		
+			}
+
+			fCore->SetMeter(position);
+			_SetAccentCheckBox(position);
 			break;
 		}
 
@@ -407,7 +438,7 @@ CronoView::MessageReceived(BMessage *message)
 			if (bpm > MAX_SPEED) {
 				fSpeedEntry->SetText(BString() << MAX_SPEED);
 				bpm = MAX_SPEED;
-			} else if(bpm < MIN_SPEED) {
+			} else if (bpm < MIN_SPEED) {
 				fSpeedEntry->SetText(BString() << MIN_SPEED);
 				bpm = MIN_SPEED;
 			}
@@ -415,24 +446,76 @@ CronoView::MessageReceived(BMessage *message)
 			fCore->SetSpeed(((int) bpm));
 			fSpeedSlider->SetPosition(((float) bpm / MAX_SPEED));
 			printf("Crono Speed: %s %d\n", fSpeedEntry->Text(), bpm);
+			_UpdateTempoName(bpm);
 			break;
 		}
 
 		case MSG_SPEED_SLIDER:
 		{
-			float v = (float)fSpeedSlider->Value();
+			int v = fSpeedSlider->Value();
 
-			if (v == 0)
-				v = 1;
+			BString str;
+			fSpeedEntry->SetText(str << v);
+			fCore->SetSpeed(v);
+			_UpdateTempoName(v);
+			break;
+		}
 
-			char strv[32];
-			sprintf(strv, "%d", (int) v);
-			fSpeedEntry->SetText(strv);
-			fCore->SetSpeed((int) v);
+		case MSG_ACCENT_TABLE:
+		{
+			BMenuItem* item = fShowMenu->FindItem(MSG_ACCENT_TABLE);
+			if (item == NULL)
+				return;
+
+			bool marked = !item->IsMarked();
+			item->SetMarked(marked);
+			gCronoSettings.AccentTable = marked;
+			int meter = _GetCurrentMeter();
+			_SetAccentCheckBox(meter);
 			break;
 		}
 
 		default:
 			BView::MessageReceived(message);
+	}
+}
+
+
+void
+CronoView::_UpdateTempoName(int32 value)
+{
+	for (int i = 0; gTempoNames[i].name != NULL; i++) {
+		if (value <= gTempoNames[i].max && value >= gTempoNames[i].min) {
+			fSpeedSlider->SetLabel(gTempoNames[i].name);
+			return;
+		}
+	}
+}
+
+
+int
+CronoView::_GetCurrentMeter()
+{
+	int radioSelected = 0;
+	// Get the selected radiobutton
+	for (int i = 0; i < 5; i++) {
+		if (fMeterRadios[i]->Value())
+			radioSelected = i;
+	}
+
+	if (radioSelected == 4) {
+		radioSelected = abs(atoi(fMeterEntry->Text()));
+	}
+	return radioSelected;
+}
+
+
+void
+CronoView::_SetAccentCheckBox(int value)
+{
+	if (value < fMeterList.CountItems()) {
+	
+	} else if (value > fMeterList.CountItems()) {
+	
 	}
 }

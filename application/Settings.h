@@ -20,9 +20,7 @@ public:
 virtual					~Settings();
 
 		status_t		OpenSettings();
-
 		status_t		FlattenSettings();
-		
 		status_t		DeleteSettings();
 
 		bool			LocationsChanged();
@@ -31,9 +29,11 @@ virtual					~Settings();
 
 		int32 			Speed;
 		int32 			Meter;
-		float			CronoVolume;
+		int32			MeterOther;
 
+		float			CronoVolume;
 		int32			Engine;
+		bool			AccentTable;
 
 protected:
 

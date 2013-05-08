@@ -63,8 +63,9 @@ Settings::OpenSettings()
 		Speed = DEFAULT_SPEED;
 		Meter = DEFAULT_METER;
 		CronoVolume = DEFAULT_VOLUME;
-		SoundFileLocation = CRONO_TOC_LOCATION;
+		SoundFileLocation = CRONO_SOUNDFILE_LOCATION;
 		Engine = CRONO_SINE_ENGINE;
+		AccentTable = false;
 		return ret;
 	}
 
@@ -211,7 +212,7 @@ Settings::_CheckSettings()
 {
 	MakeEmpty();
 
-	WriteSetting("TOCLOC", SoundFileLocation);
+	WriteSetting("SOUNDFILE", SoundFileLocation);
 	WriteSetting("SPEED", Speed);
 	WriteSetting("METER", Meter);
 	WriteSetting("VOLUME", CronoVolume);
@@ -224,7 +225,7 @@ Settings::_SetTo()
 {
 	fSoundFileLocationUndo = SoundFileLocation.String();
 
-	ReadSetting("TOCLOC", &SoundFileLocation);
+	ReadSetting("SOUNDFILE", &SoundFileLocation);
 	ReadSetting("SPEED", &Speed);
 	ReadSetting("METER", &Meter);
 	ReadSetting("VOLUME", &CronoVolume);

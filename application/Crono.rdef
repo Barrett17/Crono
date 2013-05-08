@@ -1,16 +1,16 @@
-resource app_signature "application/x-vnd.Haiku-Crono";
+resource app_signature "application/x-vnd.Crono-Metronome";
 
 resource app_version {
 	major  = 0,
-	middle = 0,
-	minor  = 3,
+	middle = 1,
+	minor  = 0,
 
 	variety = B_APPV_BETA,
 
 	internal = 0,
 
 	short_info = "Crono",
-	long_info = "Crono Metronome, v 0.0.3 Copyright (c) 2009 - 2013 Versut"
+	long_info = "Crono Metronome, v1.0 Alpha1 Copyright (c) 2009 - 2013 Versut"
 };
 
 resource app_flags B_SINGLE_LAUNCH;

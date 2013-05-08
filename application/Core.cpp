@@ -43,21 +43,29 @@ Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 	kLimit = (size_t)((fileFormat.u.raw_audio.frame_rate
 		*(fileFormat.u.raw_audio.channel_count+1))*60);
 
-	size_t limit = kLimit/gCronoSettings.Speed;
-	kTicLen = fileFormat.u.raw_audio.frame_rate / 1000 * 100;
+	size_t limit = (kLimit/gCronoSettings.Speed);
 
-	printf("%d %d %d\n", limit, kSize, kLimit);
+	/*if (gCronoSettings.Engine == CRONO_FILE_ENGINE) {
+		off_t s;
+		buf->GetSize(&s);
+		kTicLen = s;
+	} else {*/
+		kTicLen = fileFormat.u.raw_audio.frame_rate / 5;
+		limit = limit*10;
+	//}
+
+	//printf("%d %d %d\n", limit, kSize, kLimit);
 	if (kSize >= limit) {
 		kSize = kSize-limit;
 		sem = 0;
 	}
 
 	 if (sem == 1) {
-			printf("empty\n");
+			//printf("empty\n");
 			memset(buffer, 0, size);
 			kSize += size;
 	} else if (sem == 0) {
-		bool stereo = true;
+		bool stereo = false;
 
 		switch(gCronoSettings.Engine)
 		{
@@ -69,7 +77,7 @@ Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 			break;
 
 			case CRONO_SINE_ENGINE:
-				FillSineBuffer((float*)buffer, size, stereo);
+				FillSineBuffer2((float*)buffer, size);
 			break;
 
 			case CRONO_TRIANGLE_ENGINE:
@@ -81,11 +89,12 @@ Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 			break;
 		}
 
+		printf("fill!\n");
 		kSize += size;
 		if (kSize >= kTicLen)
 			sem = 1;
 	}
-	printf("%ld\n", kSize);
+	//printf("%ld\n", kSize);
 }
 
 
@@ -188,24 +197,21 @@ Core::LoadSoundFile()
 
 	fileFormat.type = B_MEDIA_RAW_AUDIO;
 
-	if (kSound != NULL && kSound->EncodedFormat(&fileFormat) != B_OK &&
-		kSound->DecodedFormat(&fileFormat) != B_OK) {
-		return B_ERROR;
-	}
+	kSound->EncodedFormat(&fileFormat);
+	kSound->DecodedFormat(&fileFormat);
 
 	buf = new BMallocIO();
-	buf->SetSize(kSound->CountFrames()*2);
 	void* buffer = new char[fileFormat.u.raw_audio.buffer_size];
 
 	int64 frames;
 	status_t ret;
-	for (frames = 0; frames < kSound->CountFrames();) {
+	for (frames = 0; kSound->CurrentFrame() != kSound->CountFrames();) {
 		int64 count;
 		ret = kSound->ReadFrames(buffer, &count);
 		if (ret != B_OK)
 			break;
 		frames += count;
-		buf->Write(buffer, fileFormat.u.raw_audio.buffer_size);
+		buf->Write(buffer, count);
 	}
 
 	delete[] (char*)buffer;
@@ -291,13 +297,6 @@ Core::SetVolume(float v)
 }
 
 
-float
-Core::Volume()
-{
-	return gCronoSettings.CronoVolume;	
-}
-
-
 void
 Core::SetEngine(int32 engine)
 {
@@ -307,6 +306,13 @@ Core::SetEngine(int32 engine)
 	Destroy();
 	gCronoSettings.Engine = engine;
 	Init();
+}
+
+
+float
+Core::Volume()
+{
+	return gCronoSettings.CronoVolume;	
 }
 
 
@@ -336,11 +342,8 @@ Core::FillFileBuffer(float* data, size_t numFrames)
 {
 	size_t read = buf->Read(data, numFrames);
 	if (read < numFrames) {
-		buf->Seek(0, SEEK_SET);
 		sem = 1;
-		for (;read <= numFrames; read++) {
-			data[read] = 0;
-		}
+		buf->Seek(0, SEEK_SET);
 	}	
 }
 
@@ -349,7 +352,8 @@ void
 Core::FillSineBuffer2(float* data, size_t numFrames)
 {
 	float* s = data;
-	int scale = -SHRT_MIN < SHRT_MAX ? -SHRT_MIN : SHRT_MAX;
+	//int scale = -SHRT_MIN < SHRT_MAX ? -SHRT_MIN : SHRT_MAX;
+	int scale = 3;
 	int i;
 	double sample;
 	double samplefreq = fileFormat.u.raw_audio.frame_rate;
@@ -379,7 +383,7 @@ void
 Core::FillSineBuffer(float* data, size_t numFrames, bool stereo)
 {
 	// cover 2pi radians in one period
-	double dTheta = 2*M_PI * double(440) / fileFormat.u.raw_audio.frame_rate*2;
+	double dTheta = 2*M_PI * double(880) / fileFormat.u.raw_audio.frame_rate*2;
 	// Fill the buffer!
 	for (size_t i = 0; i < numFrames; i++, data++) {
 		float val = mGain * float(sin(mTheta));
@@ -400,7 +404,7 @@ void
 Core::FillTriangleBuffer(float* data, size_t numFrames, bool stereo)
 {
 	// ramp from -1 to 1 and back in one period
-	double dTheta = 4.0 * double(50) / fileFormat.u.raw_audio.frame_rate;
+	double dTheta = 4.0 * double(880) / fileFormat.u.raw_audio.frame_rate;
 	if (!mWaveAscending)
 		dTheta = -dTheta;
 
@@ -431,7 +435,7 @@ void
 Core::FillSawtoothBuffer(float* data, size_t numFrames, bool stereo)
 {
 	// ramp from -1 to 1 in one period
-	double dTheta = 2 * double(50) / fileFormat.u.raw_audio.frame_rate;
+	double dTheta = 2 * double(440) / fileFormat.u.raw_audio.frame_rate;
 	mWaveAscending = true;
 
 	// fill the buffer!

@@ -104,7 +104,7 @@ SettingsView::MessageReceived(BMessage *message)
 		case MSG_REVERT:
 		case MSG_DEFAULTS:
 		{
-			fSoundEntry->SetText(CRONO_TOC_LOCATION);
+			fSoundEntry->SetText(CRONO_SOUNDFILE_LOCATION);
 			_SetEngine(CRONO_SINE_ENGINE);
 		}
 		break;
