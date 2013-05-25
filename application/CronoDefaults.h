@@ -3,8 +3,8 @@
 
 #include "Settings.h"
 
-#define CRONO_HOMEPAGE_URL "https://github.com/Barrett17/Crono"
-#define CRONO_USERGUIDE_URL "http://www.versut.com/"
+#define CRONO_HOMEPAGE_URL "http://www.versut.com/crono/"
+#define CRONO_USERGUIDE_URL "http://www.versut.com/crono/"
 
 #define MIN_SPEED 30
 #define MAX_SPEED 299

@@ -60,7 +60,6 @@ SettingsView::SettingsView(Core* core)
 	fSoundEntry->SetEnabled(false);
 
 	fDefaultsButton = new BButton("Defaults", new BMessage(MSG_DEFAULTS));
-	fRevertButton = new BButton("Revert", new BMessage(MSG_REVERT));
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, 5)
 		.AddGroup(B_VERTICAL)
@@ -68,7 +67,6 @@ SettingsView::SettingsView(Core* core)
 		.End()
 		.AddGroup(B_HORIZONTAL)
 			.Add(fDefaultsButton, 0)
-			.Add(fRevertButton, 1)
 		.End();
 
 	_SetEngine(fCore->Engine());
@@ -86,7 +84,6 @@ void
 SettingsView::AttachedToWindow()
 {
 	fDefaultsButton->SetTarget(this);
-	fRevertButton->SetTarget(this);
 	fSoundEntry->SetTarget(this);	
 
 	for (int i = 0; i < 4; i++)
@@ -101,7 +98,6 @@ SettingsView::MessageReceived(BMessage *message)
 {
 	switch(message->what)
 	{
-		case MSG_REVERT:
 		case MSG_DEFAULTS:
 		{
 			fSoundEntry->SetText(CRONO_SOUNDFILE_LOCATION);

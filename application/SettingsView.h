@@ -42,7 +42,6 @@ private:
 
 			BTextControl*	fSoundEntry;
 			BButton*		fDefaultsButton;
-			BButton*		fRevertButton;
 
 			Core*			fCore;
 };

@@ -27,13 +27,14 @@
 #include "Core.h"
 #include "CronoDefaults.h"
 #include "SettingsWindow.h"
+#include "VolumeSlider.h"
 
 #include <math.h>
 #include <stdlib.h>
 
 struct TempoNames {
-	int32 max;
 	int32 min;
+	int32 max;
 	const char* name;
 };
 
@@ -54,7 +55,8 @@ static TempoNames gTempoNames[] = {
 
 CronoView::CronoView()
 	:
-	BView("CronoView", B_WILL_DRAW | B_FULL_UPDATE_ON_RESIZE)
+	BView("CronoView", B_WILL_DRAW | B_FULL_UPDATE_ON_RESIZE),
+	fAccentsList(false)
 {
     fReplicated = false;
 
@@ -63,64 +65,29 @@ CronoView::CronoView()
 
 	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 
-	rgb_color barColor = { 0, 0, 240 };
-	rgb_color fillColor = { 240, 0, 0 };
+	rgb_color barColor = { 0, 200, 0 };
+	rgb_color fillColor = { 240, 240, 240 };
 
-	// Menu bar
-	fMenuBar = new BMenuBar("MenuBar");
-
-	fFileMenu = new BMenu("Metronome");
-
-	fFileMenu->AddItem(new BMenuItem("Quit", new BMessage(MSG_CLOSE), 'Q'));
-	fFileMenu->AddItem(new BSeparatorItem);
-	fFileMenu->AddItem(new BMenuItem("Start", new BMessage(MSG_START), 'G'));
-	fFileMenu->AddItem(new BMenuItem("Stop", new BMessage(MSG_STOP), 'H'));
-	fMenuBar->AddItem(fFileMenu);
-	
-	fEditMenu = new BMenu("Edit");
-	fEditMenu->AddItem(new BMenuItem("Settings", new BMessage(MSG_SETTINGS), 'S'));
-	fEditMenu->AddItem(new BSeparatorItem);
-
-	fShowMenu = new BMenu("Show");
-	fEditMenu->AddItem(fShowMenu);
-	
-	BMenuItem* item = new BMenuItem("Visual Metronome", NULL, 0);
-	item->SetEnabled(false);
-	fShowMenu->AddItem(item);
-
-	item = new BMenuItem("Show accents table", 
-		new BMessage(MSG_ACCENT_TABLE), 0);
-
-	fShowMenu->AddItem(item);
-	item->SetMarked(gCronoSettings.AccentTable);
-
-	fMenuBar->AddItem(fEditMenu);
-
-	fHelpMenu = new BMenu("Help");
-	fHelpMenu->AddItem(new BMenuItem("Help", new BMessage(MSG_HELP), 'H'));
-	fHelpMenu->AddItem(new BMenuItem("Homepage", new BMessage(MSG_HOMEPAGE), 'P'));
-	fHelpMenu->AddItem(new BSeparatorItem);
-	fHelpMenu->AddItem(new BMenuItem("About", new BMessage(MSG_ABOUT), 'A'));
-	fMenuBar->AddItem(fHelpMenu);
+	_BuildMenu();
 
 	// Volume slider
 	BBox* volBox = new BBox("volbox");
 	volBox->SetLabel("Volume");
+
 	BGroupLayout* volLayout = new BGroupLayout(B_VERTICAL);
 	volLayout->SetInsets(10, volBox->TopBorderOffset() * 2 + 10, 10, 10);
 	volBox->SetLayout(volLayout);
 	
-	fVolumeSlider = new BSlider("", "", new BMessage(MSG_VOLUME),
-		1, 100, B_HORIZONTAL);
+	fVolumeSlider = new VolumeSlider("",
+		0, 1000, DEFAULT_VOLUME, new BMessage(MSG_VOLUME));
 
 	fVolumeSlider->SetLimitLabels("Min", "Max");
 	fVolumeSlider->SetHashMarks(B_HASH_MARKS_BOTTOM);
-	fVolumeSlider->SetHashMarkCount(10);
-	fVolumeSlider->SetBarColor(barColor);
+	fVolumeSlider->SetHashMarkCount(20);
 	fVolumeSlider->SetValue((int32)fCore->Volume()*10);
 	fVolumeSlider->UseFillColor(true, &fillColor);
 	fVolumeSlider->SetPosition(gCronoSettings.CronoVolume);
-
+	fVolumeSlider->SetLabel(BString() << gCronoSettings.CronoVolume);
 	volLayout->AddView(fVolumeSlider);
 
 	// Speed Slider & TextControl
@@ -129,40 +96,37 @@ CronoView::CronoView()
 	BGroupLayout* speedLayout = new BGroupLayout(B_HORIZONTAL);
 	speedLayout->SetInsets(10, speedBox->TopBorderOffset() * 2 + 10, 10, 10);
 	speedBox->SetLayout(speedLayout);
-	
-	fSpeedSlider = new BSlider("", "",
-		new BMessage(MSG_SPEED_SLIDER), MIN_SPEED, MAX_SPEED, B_HORIZONTAL);
+
+	fSpeedSlider = new VolumeSlider("",
+		MIN_SPEED, MAX_SPEED, DEFAULT_SPEED, new BMessage(MSG_SPEED_SLIDER));
 
 	fSpeedSlider->SetLimitLabels(BString() << MIN_SPEED,
 		BString() << MAX_SPEED);
 
 	fSpeedSlider->SetKeyIncrementValue(5);
 	fSpeedSlider->SetHashMarks(B_HASH_MARKS_BOTTOM);
-	fSpeedSlider->SetHashMarkCount(10);
-	fSpeedSlider->SetBarColor(barColor);
+	fSpeedSlider->SetHashMarkCount(15);
 	fSpeedSlider->SetValue(fCore->Speed());
 	fSpeedSlider->UseFillColor(true, &fillColor);
-	
-	
+	_UpdateTempoName(gCronoSettings.Speed);
+
 	fSpeedEntry = new BTextControl("", "", BString() << gCronoSettings.Speed,
 		new BMessage(MSG_SPEED_ENTRY), B_WILL_DRAW);
 
 	fSpeedEntry->SetDivider(70);
 	fSpeedEntry->SetAlignment(B_ALIGN_RIGHT, B_ALIGN_RIGHT);
 	fSpeedEntry->SetExplicitSize(BSize(35, 20));
-	
+
 	speedLayout->AddView(fSpeedSlider);
 	speedLayout->AddView(fSpeedEntry);
 
 	// Meter buttons
 	BBox* meterBox = new BBox("meterbox");
 	meterBox->SetLabel("Meter");
-	BGroupLayout* meterLayout = new BGroupLayout(B_HORIZONTAL);
-	meterLayout->SetInsets(10, meterBox->TopBorderOffset() * 2 + 10, 10, 10);
-	meterBox->SetLayout(meterLayout);
 
 	for(int i = 0; i < 5; i++)
-		fMeterRadios[i] = new BRadioButton("", "", new BMessage(MSG_METER_RADIO));
+		fMeterRadios[i] = new BRadioButton("", "",
+			new BMessage(MSG_METER_RADIO));
 
 	fMeterRadios[0]->SetLabel("1/4");
 	fMeterRadios[1]->SetLabel("2/4");
@@ -177,20 +141,30 @@ CronoView::CronoView()
 	fMeterEntry->SetDivider(70);
 	fMeterEntry->SetEnabled(false);
 
-	for(int i= 0; i < 5; i++)
-		meterLayout->AddView(fMeterRadios[i]);
-	meterLayout->AddView(fMeterEntry);
+	fAccentsLayout = new BGroupLayout(B_HORIZONTAL, 0);
 
+	BLayoutBuilder::Group<>(meterBox, B_VERTICAL, 0)
+		.SetInsets(10, meterBox->TopBorderOffset() * 2 + 10, 10, 10)
+		.AddGroup(B_HORIZONTAL)
+			.Add(fMeterRadios[0])
+			.Add(fMeterRadios[1])
+			.Add(fMeterRadios[2])
+			.Add(fMeterRadios[3])
+			.Add(fMeterRadios[4])
+			.Add(fMeterEntry)
+		.End()
+		.AddStrut(1)
+		.Add(fAccentsLayout)
+	.End();
 
-	// Start and stop button	
-	BGroupView* buttonGroup = new BGroupView(B_HORIZONTAL);
+	if (gCronoSettings.AccentTable) {
+		BMessenger msg(this);
+		msg.SendMessage(MSG_ACCENT_TABLE);
+	}
 
 	fStartButton = new BButton("Start", new BMessage(MSG_START));						
 	fStartButton->MakeDefault(true);	
-	buttonGroup->GroupLayout()->AddView(fStartButton);
-
 	fStopButton = new BButton("Stop", new BMessage(MSG_STOP));							
-	buttonGroup->GroupLayout()->AddView(fStopButton);
 
 #ifdef CRONO_REPLICANT_ACTIVE
 	// Dragger
@@ -202,15 +176,17 @@ CronoView::CronoView()
 #endif
 
 	// Create view
-	BLayoutBuilder::Group<>(this, B_VERTICAL, 5)
-		.AddGroup(B_VERTICAL)
-			.Add(fMenuBar, 0)
-			.Add(volBox, 1)
-			.Add(speedBox, 2)
-			.Add(meterBox, 3)
-			.Add(buttonGroup, 4)
+	BLayoutBuilder::Group<>(this, B_VERTICAL, 0)
+		.Add(fMenuBar)
+		.Add(volBox)
+		.Add(speedBox)
+		.Add(meterBox)
+		.AddGroup(B_HORIZONTAL)
+			.Add(fStartButton)
+			.Add(fStopButton)
+		.End()
 #ifdef CRONO_REPLICANT_ACTIVE
-			.Add(dragger, 5)
+		.Add(dragger)
 #endif
 		.End();
 }
@@ -395,7 +371,7 @@ CronoView::MessageReceived(BMessage *message)
 		{
 			float position = fVolumeSlider->Position();
 			fCore->SetVolume(position);
-			printf("CronoView: Volume: %f\n", position);
+			fVolumeSlider->SetLabel(BString() << position);
 			break;
 		}
 
@@ -470,7 +446,16 @@ CronoView::MessageReceived(BMessage *message)
 			bool marked = !item->IsMarked();
 			item->SetMarked(marked);
 			gCronoSettings.AccentTable = marked;
-			int meter = _GetCurrentMeter();
+
+			/*if (marked)
+				fAccentsLayout->Show();
+			else
+				fAccentsLayout->Hide();*/
+
+			int meter = 0;
+			if (marked)
+				meter = _GetCurrentMeter();
+
 			_SetAccentCheckBox(meter);
 			break;
 		}
@@ -478,6 +463,56 @@ CronoView::MessageReceived(BMessage *message)
 		default:
 			BView::MessageReceived(message);
 	}
+}
+
+
+void
+CronoView::_BuildMenu()
+{
+	// Menu bar
+	fMenuBar = new BMenuBar("MenuBar");
+
+	fFileMenu = new BMenu("Metronome");
+
+	fFileMenu->AddItem(new BMenuItem("Quit", new BMessage(MSG_CLOSE), 'Q'));
+	fFileMenu->AddItem(new BSeparatorItem);
+	fFileMenu->AddItem(new BMenuItem("Start", new BMessage(MSG_START), 'G'));
+	fFileMenu->AddItem(new BMenuItem("Stop", new BMessage(MSG_STOP), 'H'));
+	fMenuBar->AddItem(fFileMenu);
+	
+	fEditMenu = new BMenu("Edit");
+	fEditMenu->AddItem(new BMenuItem("Settings", new BMessage(MSG_SETTINGS), 'S'));
+	fEditMenu->AddItem(new BSeparatorItem);
+
+	fShowMenu = new BMenu("Show");
+	fEditMenu->AddItem(fShowMenu);
+	
+	BMenuItem* item = new BMenuItem("Visual Metronome", NULL, 0);
+	item->SetEnabled(false);
+	fShowMenu->AddItem(item);
+
+	item = new BMenuItem("Show accents table", 
+		new BMessage(MSG_ACCENT_TABLE), 0);
+
+	fShowMenu->AddItem(item);
+	item->SetMarked(gCronoSettings.AccentTable);
+
+	fMenuBar->AddItem(fEditMenu);
+
+	fHelpMenu = new BMenu("Help");
+
+	fHelpMenu->AddItem(new BMenuItem("Help",
+		new BMessage(MSG_HELP), 'H'));
+
+	fHelpMenu->AddItem(new BMenuItem("Homepage",
+		new BMessage(MSG_HOMEPAGE),'P'));
+
+	fHelpMenu->AddItem(new BSeparatorItem);
+
+	fHelpMenu->AddItem(new BMenuItem("About",
+		new BMessage(MSG_ABOUT), 'A'));
+
+	fMenuBar->AddItem(fHelpMenu);
 }
 
 
@@ -513,9 +548,16 @@ CronoView::_GetCurrentMeter()
 void
 CronoView::_SetAccentCheckBox(int value)
 {
-	if (value < fMeterList.CountItems()) {
-	
-	} else if (value > fMeterList.CountItems()) {
-	
+	if (value < fAccentsList.CountItems()) {
+		for (int i = value; fAccentsList.CountItems() > value; i++) {
+			fAccentsLayout->RemoveView(fAccentsList.ItemAt(i));
+			fAccentsList.RemoveItemAt(i);
+		}
+	} else if (value > fAccentsList.CountItems()) {
+		for (int i = fAccentsList.CountItems(); i <= value; i++) {
+			BCheckBox* box = new BCheckBox(BString() << i+1, NULL);
+			fAccentsList.AddItem(box);
+			fAccentsLayout->AddView(box);
+		}
 	}
 }

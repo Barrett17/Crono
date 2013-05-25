@@ -12,9 +12,11 @@
 
 #include <CheckBox.h>
 #include <ObjectList.h>
+#include <GroupLayout.h>
 #include <SupportDefs.h>
 #include <View.h>
 
+class BBox;
 class BMenuBar;
 class BMenu;
 class BButton;
@@ -59,6 +61,7 @@ public:
 	virtual status_t		Archive(BMessage* data, bool deep = true) const;
 
 private:
+			void			_BuildMenu();
 			void			_UpdateTempoName(int32 value);
 			int				_GetCurrentMeter();
 			void			_SetAccentCheckBox(int value);
@@ -80,7 +83,9 @@ private:
 			Core*			fCore;
 			bool			fReplicated;
 
-			BObjectList<BCheckBox*> fMeterList;
+			BGroupLayout*	fAccentsLayout;
+
+			BObjectList<BCheckBox> fAccentsList;
 };
 
 #endif

@@ -12,6 +12,7 @@ Application Crono :
 	Settings.cpp
 	SettingsView.cpp
 	SettingsWindow.cpp
+	VolumeSlider.cpp
 	: be media $(TARGET_LIBSTDC++)
 	: Crono.rdef
 ;
