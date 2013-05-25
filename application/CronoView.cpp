@@ -68,6 +68,7 @@ CronoView::CronoView()
 	rgb_color barColor = { 0, 200, 0 };
 	rgb_color fillColor = { 240, 240, 240 };
 
+
 	_BuildMenu();
 
 	// Volume slider

@@ -62,8 +62,8 @@ Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 	}
 
 	 if (kSem == 1) {
-			memset(buffer, 0, size);
-			kSize += size;
+		memset(buffer, 0, size);
+		kSize += size;
 	} else if (kSem == 0) {
 
 		switch(gCronoSettings.Engine)
@@ -76,7 +76,7 @@ Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 			break;
 
 			case CRONO_SINE_ENGINE:
-				FillSineBuffer((float*)buffer, size, stereo);
+				FillSineBuffer2((float*)buffer, size);
 			break;
 
 			case CRONO_TRIANGLE_ENGINE:
