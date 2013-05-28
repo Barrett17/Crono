@@ -12,13 +12,14 @@
 
 #include <CheckBox.h>
 #include <ObjectList.h>
-#include <GroupLayout.h>
+#include <GroupView.h>
 #include <SupportDefs.h>
 #include <View.h>
 
 class BBox;
 class BMenuBar;
 class BMenu;
+class BMenuItem;
 class BButton;
 class BSlider;
 class BTextControl;
@@ -65,25 +66,29 @@ private:
 			void			_UpdateTempoName(int32 value);
 			int				_GetCurrentMeter();
 			void			_SetAccentCheckBox(int value);
+			void			_ShowTable(bool show);
 
 			BMenuBar*		fMenuBar;
 			BMenu*			fHelpMenu;
 			BMenu*			fFileMenu;
 			BMenu*			fEditMenu;
 			BMenu*			fShowMenu;
+
+			BMenuItem*		fAccentTableItem;
+
 			BButton*		fStartButton;
 			BButton*		fStopButton;
 			BSlider*		fVolumeSlider;
 
-			BRadioButton*	fMeterRadios[5];
-			BTextControl*	fMeterEntry;
+			BRadioButton*	fTempoRadios[5];
+			BTextControl*	fTempoEntry;
 
 			BTextControl*	fSpeedEntry;
 			BSlider*		fSpeedSlider;
 			Core*			fCore;
 			bool			fReplicated;
 
-			BGroupLayout*	fAccentsLayout;
+			BGroupView*	fAccentsView;
 
 			BObjectList<BCheckBox> fAccentsList;
 };

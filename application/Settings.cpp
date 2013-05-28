@@ -231,5 +231,5 @@ Settings::_SetTo()
 	ReadSetting("METER", &Meter);
 	ReadSetting("VOLUME", &CronoVolume);
 	ReadSetting("ENGINE", &Engine);
-	WriteSetting("ACCENT", &AccentTable);
+	ReadSetting("ACCENT", &AccentTable);
 }

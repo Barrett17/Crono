@@ -48,6 +48,10 @@ public:
 
 	static	void		PlayBuffer(void* cookie, void* buffer, size_t size,
 							const media_raw_audio_format& format);
+	static	void		PlayFileBuffer(void* cookie, void* buffer, size_t size,
+							const media_raw_audio_format& format);
+	static	void		PlayMathBuffer(void* cookie, void* buffer, size_t size,
+							const media_raw_audio_format& format);
 private:
 	static	void 		FillFileBuffer(float* data, size_t numFrames);
 

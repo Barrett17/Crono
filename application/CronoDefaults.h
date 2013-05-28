@@ -6,8 +6,8 @@
 #define CRONO_HOMEPAGE_URL "http://www.versut.com/crono/"
 #define CRONO_USERGUIDE_URL "http://www.versut.com/crono/"
 
-#define MIN_SPEED 30
-#define MAX_SPEED 299
+#define MIN_SPEED 5
+#define MAX_SPEED 500
 
 const int32	DEFAULT_SPEED	= 60;
 const float	DEFAULT_VOLUME	= 0.5;
@@ -31,5 +31,13 @@ const int32	DEFAULT_METER	= 3;
 //#define CRONO_REPLICANT_ACTIVE 1
 
 #define CRONO_APP_TYPE "application/x-vnd.Crono-Metronome"
+
+// Small class used to fill a list of the accents
+// set by the user.
+class AccentState {
+public:
+	bool active;
+	bool mute;
+};
 
 #endif

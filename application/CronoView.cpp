@@ -1,6 +1,6 @@
 /*
- * Copyright (c) Casalinuovo Dario. All rights reserved.
- * Copyright (c) Davide Gessa. All rights reserved.
+ * Copyright (c) Casalinuovo Dario 2009-2013. All rights reserved.
+ * Copyright (c) Davide Gessa 2009-2013. All rights reserved.
  * Distributed under the terms of the MIT License for non commercial use.
  *
  * Authors:
@@ -38,6 +38,8 @@ struct TempoNames {
 	const char* name;
 };
 
+// This is used as a map to fill the
+// the speed meter label
 static TempoNames gTempoNames[] = {
 	{ 10, 39, "Grave" },
 	{ 40, 59, "Largo" },
@@ -45,10 +47,10 @@ static TempoNames gTempoNames[] = {
 	{ 66, 75, "Lento/Adagio" },
 	{ 76, 107, "Andante" },
 	{ 108, 119, "Moderato" },
-	{ 120, 139, "Allegro" },
-	{ 140, 167, "Vivace" },
-	{ 168, 200, "Presto" },
-	{ 201, 500, "Prestissimo" },
+	{ 120, 169, "Allegro" },
+	{ 170, 184, "Vivace" },
+	{ 185, 209, "Presto" },
+	{ 210, 500, "Prestissimo" },
 	{ 0, 0, NULL }
 };
 
@@ -122,46 +124,50 @@ CronoView::CronoView()
 	speedLayout->AddView(fSpeedEntry);
 
 	// Meter buttons
-	BBox* meterBox = new BBox("meterbox");
-	meterBox->SetLabel("Meter");
+	BBox* tempoBox = new BBox("tempoBox");
+	tempoBox->SetLabel("Tempo");
 
 	for(int i = 0; i < 5; i++)
-		fMeterRadios[i] = new BRadioButton("", "",
+		fTempoRadios[i] = new BRadioButton("", "",
 			new BMessage(MSG_METER_RADIO));
 
-	fMeterRadios[0]->SetLabel("1/4");
-	fMeterRadios[1]->SetLabel("2/4");
-	fMeterRadios[2]->SetLabel("3/4");
-	fMeterRadios[3]->SetLabel("4/4");
-	fMeterRadios[3]->SetValue(1);
-	fMeterRadios[4]->SetLabel("Other");
+	fTempoRadios[0]->SetLabel("1/4");
+	fTempoRadios[1]->SetLabel("2/4");
+	fTempoRadios[2]->SetLabel("3/4");
+	fTempoRadios[3]->SetLabel("4/4");
+	fTempoRadios[4]->SetLabel("Other");
 
-	fMeterEntry = new BTextControl("", "", "4",
+	fTempoRadios[fCore->Meter()]->SetValue(1);
+
+	fTempoEntry = new BTextControl("", "", "4",
 		new BMessage(MSG_METER_ENTRY), B_WILL_DRAW);
 
-	fMeterEntry->SetDivider(70);
-	fMeterEntry->SetEnabled(false);
+	fTempoEntry->SetDivider(70);
 
-	fAccentsLayout = new BGroupLayout(B_HORIZONTAL, 0);
+	if (fTempoRadios[4]->Value() == 1)
+		fTempoEntry->SetEnabled(true);
+	else
+		fTempoEntry->SetEnabled(false);		
 
-	BLayoutBuilder::Group<>(meterBox, B_VERTICAL, 0)
-		.SetInsets(10, meterBox->TopBorderOffset() * 2 + 10, 10, 10)
-		.AddGroup(B_HORIZONTAL)
-			.Add(fMeterRadios[0])
-			.Add(fMeterRadios[1])
-			.Add(fMeterRadios[2])
-			.Add(fMeterRadios[3])
-			.Add(fMeterRadios[4])
-			.Add(fMeterEntry)
+	fAccentsView = new BGroupView(B_HORIZONTAL, 0);
+
+	BLayoutBuilder::Group<>(tempoBox, B_VERTICAL, 0)
+		.SetInsets(10, tempoBox->TopBorderOffset() * 2 + 10, 10, 10)
+		.AddGroup(B_HORIZONTAL, 0)
+			.Add(fTempoRadios[0])
+			.Add(fTempoRadios[1])
+			.Add(fTempoRadios[2])
+			.Add(fTempoRadios[3])
+			.Add(fTempoRadios[4])
+			.Add(fTempoEntry)
+			.AddGlue()
 		.End()
-		.AddStrut(1)
-		.Add(fAccentsLayout)
+		.Add(fAccentsView)
+		.AddGlue()
 	.End();
 
-	if (gCronoSettings.AccentTable) {
-		BMessenger msg(this);
-		msg.SendMessage(MSG_ACCENT_TABLE);
-	}
+	if (gCronoSettings.AccentTable == true)
+		_ShowTable(true);
 
 	fStartButton = new BButton("Start", new BMessage(MSG_START));						
 	fStartButton->MakeDefault(true);	
@@ -181,7 +187,7 @@ CronoView::CronoView()
 		.Add(fMenuBar)
 		.Add(volBox)
 		.Add(speedBox)
-		.Add(meterBox)
+		.Add(tempoBox)
 		.AddGroup(B_HORIZONTAL)
 			.Add(fStartButton)
 			.Add(fStopButton)
@@ -213,14 +219,11 @@ CronoView::CronoView(BMessage* archive)
 	fVolumeSlider = new BSlider(archive);
 	
 	for(int i = 0; i < 5; i++)
-		fMeterRadios[i] = new BRadioButton(archive);
-	fMeterEntry = new BTextControl(archive);
+		fTempoRadios[i] = new BRadioButton(archive);
+	fTempoEntry = new BTextControl(archive);
 	fSpeedEntry = new BTextControl(archive);
 	fSpeedSlider = new BSlider(archive);
 
-/*	be_app->Lock();
-	be_app->AddHandler(this);
-	be_app->Unlock();*/
 	fReplicated = true;
 }
 
@@ -236,8 +239,8 @@ void
 CronoView::AboutRequested()
 {
 	BAlert *alert = new BAlert("About Crono", 
-	"\nCrono Metronome v1.0 Alpha1\n"
-	"Copyright ©2009-2013 Dario Casalinuovo\n\n"
+	"\nCrono Metronome v1.0 Alpha1\n\n"
+	"Copyright ©2009-2013 Dario Casalinuovo\n"
 	"Copyright ©2009-2013 Davide Gessa \n\n"
 	"Crono is a Software Metronome for Haiku\n"
 	"http://www.versut.com/\n\n"
@@ -245,7 +248,8 @@ CronoView::AboutRequested()
 	"Dario Casalinuovo (GUI, Core)\n"
 	"Davide Gessa (GUI)\n\n"
 	"Released under the terms of the MIT license.\n\n"
-	"Special Thanks :\n Stefano D'Angelo",
+	"Special Thanks :\n Stefano D'Angelo\n"
+	" Stephan Aßmus, for the VolumeSlider class",
 	"OK", NULL, NULL, B_WIDTH_FROM_WIDEST, B_EVEN_SPACING, B_INFO_ALERT);
 	alert->Go();
 }
@@ -276,8 +280,8 @@ CronoView::AttachedToWindow()
 	fVolumeSlider->SetTarget(this);
 
 	for(int i = 0; i < 5; i++)
-		fMeterRadios[i]->SetTarget(this);
-	fMeterEntry->SetTarget(this);
+		fTempoRadios[i]->SetTarget(this);
+	fTempoEntry->SetTarget(this);
 	
 	fSpeedEntry->SetTarget(this);
 	fSpeedSlider->SetTarget(this);
@@ -350,7 +354,6 @@ CronoView::MessageReceived(BMessage *message)
 			fEditMenu->FindItem(MSG_SETTINGS)->SetEnabled(false);
 			fFileMenu->FindItem(MSG_START)->SetEnabled(false);
 			fFileMenu->FindItem(MSG_STOP)->SetEnabled(true);
-			printf("CronoView: Start\n");
 			break;
 		}
 
@@ -363,8 +366,6 @@ CronoView::MessageReceived(BMessage *message)
 			fEditMenu->FindItem(MSG_SETTINGS)->SetEnabled(true);
 			fFileMenu->FindItem(MSG_START)->SetEnabled(true);
 			fFileMenu->FindItem(MSG_STOP)->SetEnabled(false);
-
-			printf("CronoView: Stop\n");
 			break;
 		}
 
@@ -380,26 +381,28 @@ CronoView::MessageReceived(BMessage *message)
 		{
 			int selected = _GetCurrentMeter();
 
-			// If "Other" is selected, enable the fMeterEntry
-			if (selected == 4) {
-				fMeterEntry->SetEnabled(true);
+			// If "Other" is selected, enable the fTempoEntry
+			if (fTempoRadios[4]->Value() == true) {
+				fTempoEntry->SetEnabled(true);
 			} else {
-				fMeterEntry->SetEnabled(false);
-				fCore->SetMeter(selected + 1);
+				fTempoEntry->SetEnabled(false);
 			}
-			_SetAccentCheckBox(selected);
+			fCore->SetMeter(selected);
+
+			if (gCronoSettings.AccentTable)
+				_SetAccentCheckBox(selected);
 			break;
 		}
 
 		case MSG_METER_ENTRY:
 		{
-			int position = abs(atoi(fMeterEntry->Text()));
+			int position = abs(atoi(fTempoEntry->Text()));
 			if (position < 1) {
-				fMeterEntry->SetText("1");
+				fTempoEntry->SetText("1");
 				position = 1;
 				return;
 			} else if (position > 100) {
-				fMeterEntry->SetText("100");
+				fTempoEntry->SetText("100");
 				position = 100;		
 			}
 
@@ -440,24 +443,10 @@ CronoView::MessageReceived(BMessage *message)
 
 		case MSG_ACCENT_TABLE:
 		{
-			BMenuItem* item = fShowMenu->FindItem(MSG_ACCENT_TABLE);
-			if (item == NULL)
-				return;
-
-			bool marked = !item->IsMarked();
-			item->SetMarked(marked);
+			bool marked = !fAccentTableItem->IsMarked();
 			gCronoSettings.AccentTable = marked;
 
-			/*if (marked)
-				fAccentsLayout->Show();
-			else
-				fAccentsLayout->Hide();*/
-
-			int meter = 0;
-			if (marked)
-				meter = _GetCurrentMeter();
-
-			_SetAccentCheckBox(meter);
+			_ShowTable(marked);
 			break;
 		}
 
@@ -492,11 +481,14 @@ CronoView::_BuildMenu()
 	item->SetEnabled(false);
 	fShowMenu->AddItem(item);
 
-	item = new BMenuItem("Show accents table", 
+	item = new BMenuItem("Speed trainer", NULL, 0);
+	item->SetEnabled(false);
+	fShowMenu->AddItem(item);
+
+	fAccentTableItem = new BMenuItem("Show accents table", 
 		new BMessage(MSG_ACCENT_TABLE), 0);
 
-	fShowMenu->AddItem(item);
-	item->SetMarked(gCronoSettings.AccentTable);
+	fShowMenu->AddItem(fAccentTableItem);
 
 	fMenuBar->AddItem(fEditMenu);
 
@@ -535,30 +527,53 @@ CronoView::_GetCurrentMeter()
 	int radioSelected = 0;
 	// Get the selected radiobutton
 	for (int i = 0; i < 5; i++) {
-		if (fMeterRadios[i]->Value())
+		if (fTempoRadios[i]->Value())
 			radioSelected = i;
 	}
 
-	if (radioSelected == 4) {
-		radioSelected = abs(atoi(fMeterEntry->Text()));
-	}
+	if (radioSelected == 4)
+		radioSelected = abs(atoi(fTempoEntry->Text()));
+	else
+		return radioSelected+1;
+
 	return radioSelected;
+}
+
+
+void
+CronoView::_ShowTable(bool show)
+{
+	int meter = 0;
+
+	if (show)
+		meter = _GetCurrentMeter();
+
+	fAccentTableItem->SetMarked(show);
+	_SetAccentCheckBox(meter);
+
+	if (show)
+		fAccentsView->Show();
+	else
+		fAccentsView->Hide();
+
 }
 
 
 void
 CronoView::_SetAccentCheckBox(int value)
 {
-	if (value < fAccentsList.CountItems()) {
-		for (int i = value; fAccentsList.CountItems() > value; i++) {
-			fAccentsLayout->RemoveView(fAccentsList.ItemAt(i));
+	int numControls = fAccentsList.CountItems()-1;
+	value -= 1;
+	if (numControls > value) {
+		for (int i = numControls; i != value; i--) {
+			fAccentsView->GroupLayout()->RemoveView(fAccentsList.ItemAt(i));
 			fAccentsList.RemoveItemAt(i);
 		}
-	} else if (value > fAccentsList.CountItems()) {
-		for (int i = fAccentsList.CountItems(); i <= value; i++) {
-			BCheckBox* box = new BCheckBox(BString() << i+1, NULL);
+	} else if (numControls < value) {
+		for (int i = numControls; i != value; i++) {
+			BCheckBox* box = new BCheckBox(BString() << i+2, NULL);
 			fAccentsList.AddItem(box);
-			fAccentsLayout->AddView(box);
+			fAccentsView->GroupLayout()->AddView(box);
 		}
 	}
 }

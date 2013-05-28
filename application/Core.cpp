@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <sys/time.h>
 
 BSoundPlayer* kPlayer = NULL;
 
@@ -34,29 +35,156 @@ double kDuration = 0.01;
 double kFreq = 660;
 double kScale = 1;
 
+//timeval prev;
+
 
 void
 Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 	const media_raw_audio_format& format)
 {
-	kLimit = (size_t)((kFileFormat.u.raw_audio.frame_rate
-		*(kFileFormat.u.raw_audio.channel_count+1))*60);
-
 	size_t limit = (kLimit/gCronoSettings.Speed);
 	bool stereo = format.channel_count == 2;
-	/*if (gCronoSettings.Engine == CRONO_FILE_ENGINE) {
-		off_t s;
-		kBuf->GetSize(&s);
-		kTicLen = s;
-	} else {*/
-		kTicLen = kFileFormat.u.raw_audio.frame_rate / 5;
-		limit = limit*10;
-	//}
+
+	printf("%f\n", limit / kFileFormat.u.raw_audio.frame_rate*2);
+
+	kTicLen = kFileFormat.u.raw_audio.frame_rate/7;
+	limit = limit*10;
+
+	if (kSize >= limit) { 
+		//timeval start;
+		//prev = start;
+		//gettimeofday(&start, NULL);
+		//printf("took %lu\n", start.tv_usec - prev.tv_usec);
+		kSize -= limit;
+		kSem = 0;
+	}
+
+	size_t remaining = 0;
+	if (kSize+size > limit) {
+		remaining = kSize+size - limit;
+		size -= remaining;
+	}
+
+	if (kSem == 1) {
+		memset(buffer, 0, size);
+		kSize += size;
+		//if (fillSize < kSize) {
+		//	fillSize = kSize - fillSize;
+		//	kSem = 0;
+		//}
+		if (remaining >= 0) {
+			kSem = 0;
+			size = remaining;
+		}
+	}
+
+	if (kSem == 0) {
+
+		switch(gCronoSettings.Engine)
+		{
+			case CRONO_SINE_ENGINE:
+				FillSineBuffer((float*)buffer, size, stereo);
+			break;
+
+			case CRONO_TRIANGLE_ENGINE:
+				FillTriangleBuffer((float*)buffer, size, true);
+			break;
+
+			case CRONO_SAWTOOTH_ENGINE:
+				FillSawtoothBuffer((float*)buffer, size, stereo);
+			break;
+		}
+
+		kSize += size;
+		if (remaining > 0) {
+			printf("defect\n");
+			memset(buffer, size-remaining, remaining);
+			remaining = 0;
+		}
+			
+		if (kSize >= kTicLen) {
+			kSem = 1;
+		}
+	}
+}
+
+
+void
+Core::PlayMathBuffer(void* cookie, void* buffer, size_t size,
+	const media_raw_audio_format& format)
+{
+	//size_t limit = (kLimit/gCronoSettings.Speed);
+	size_t limit = (gCronoSettings.Speed / 60)*(kFileFormat.u.raw_audio.frame_rate
+		*(kFileFormat.u.raw_audio.channel_count+1));
+	bool stereo = format.channel_count == 2;
+
+	kTicLen = (gCronoSettings.Speed/60*60)/ 5;
+	limit = limit*10;
+
+	if (kSize >= limit) { 
+/*		timeval start;
+		prev = start;
+		gettimeofday(&start, NULL);
+		printf("took %lu\n", start.tv_usec - prev.tv_usec);*/
+		kSize -= limit;
+		kSem = 0;
+	}
+
+	size_t fillSize = size;
+
+	if (kSize + size > limit) {
+		fillSize = size + kSize - limit;
+	}
+
+	if (kSem == 1) {
+		memset(buffer, 0, fillSize);
+		kSize += fillSize;
+		/*if (fillSize < kSize) {
+			fillSize = kSize - fillSize;
+			kSem = 0;
+		}*/
+	}
+
+	if (kSem == 0) {
+
+		switch(gCronoSettings.Engine)
+		{
+			case CRONO_SINE_ENGINE:
+				FillSineBuffer((float*)buffer, fillSize, stereo);
+			break;
+
+			case CRONO_TRIANGLE_ENGINE:
+				FillTriangleBuffer((float*)buffer, fillSize, stereo);
+			break;
+
+			case CRONO_SAWTOOTH_ENGINE:
+				FillSawtoothBuffer((float*)buffer, fillSize, stereo);
+			break;
+		}
+
+		kSize += fillSize;
+		if (kSize >= kTicLen) {
+			kSem = 1;
+		}
+	}
+}
+
+
+void
+Core::PlayFileBuffer(void* cookie, void* buffer, size_t size,
+	const media_raw_audio_format& format)
+{
+	size_t limit = (kLimit/gCronoSettings.Speed);
+	bool stereo = format.channel_count == 2;
+
+	off_t s;
+	kBuf->GetSize(&s);
+	kTicLen = s;
 
 	if (kSize + size > limit)
 		size -= kSize + size - limit;
 
-	if (kSize == limit) { 
+	if (kSize >= limit) { 
 		kSize -= limit;
 		kSem = 0;
 	}
@@ -65,28 +193,10 @@ Core::PlayBuffer(void* cookie, void* buffer, size_t size,
 		memset(buffer, 0, size);
 		kSize += size;
 	} else if (kSem == 0) {
+		FillFileBuffer((float*)buffer, size);
 
-		switch(gCronoSettings.Engine)
-		{
-			case CRONO_FILE_ENGINE:
-				FillFileBuffer((float*)buffer, size);
-			break;
-
-			case CRONO_DEFAULT_ENGINE:
-			break;
-
-			case CRONO_SINE_ENGINE:
-				FillSineBuffer2((float*)buffer, size);
-			break;
-
-			case CRONO_TRIANGLE_ENGINE:
-				FillTriangleBuffer((float*)buffer, size, stereo);
-			break;
-
-			case CRONO_SAWTOOTH_ENGINE:
-				FillSawtoothBuffer((float*)buffer, size, stereo);
-			break;
-		}
+		if (size <  kFileFormat.u.raw_audio.buffer_size)
+			size -= kSize + size - limit;
 
 		kSize += size;
 		if (kSize >= kTicLen)
@@ -144,6 +254,10 @@ Core::Init()
 
 	kPlayer = new BSoundPlayer(&kFileFormat.u.raw_audio, 
 		"CronoPlayback", PlayBuffer);
+
+
+	kLimit = (size_t)((kFileFormat.u.raw_audio.frame_rate
+		*(kFileFormat.u.raw_audio.channel_count+1))*60);
 }
 
 
@@ -167,8 +281,11 @@ Core::LoadGeneratedSounds()
 	kFileFormat.u.raw_audio.byte_order = 
 		(B_HOST_IS_BENDIAN) ? B_MEDIA_BIG_ENDIAN : B_MEDIA_LITTLE_ENDIAN;
 
-	kFileFormat.u.raw_audio.buffer_size = media_raw_audio_format::wildcard.buffer_size;
-	kFileFormat.u.raw_audio.channel_count = media_raw_audio_format::wildcard.channel_count;
+	kFileFormat.u.raw_audio.buffer_size 
+		= media_raw_audio_format::wildcard.buffer_size;
+
+	kFileFormat.u.raw_audio.channel_count
+		= media_raw_audio_format::wildcard.channel_count;
 }
 
 
@@ -280,8 +397,7 @@ Core::SetSpeed(int32 s)
 void 
 Core::SetMeter(int32 m)
 {
-	if (m < 10 && m >= 0)
-		gCronoSettings.Meter = m;
+	gCronoSettings.Meter = m;
 }
 
 
@@ -350,18 +466,18 @@ Core::FillSineBuffer(float* data, size_t numFrames, bool stereo)
 	double framerate = kFileFormat.u.raw_audio.frame_rate;
 	for (size_t i = 0; i < numFrames; i++, data++) {
 		double kTheta = (2 * M_PI * double(kFreq) / (framerate * kDuration) * 0.5);
-		float val = float(sin(i / kTheta));
+		float val = float(cos(i / kTheta));
 
 		if (i > kFileFormat.u.raw_audio.frame_rate * (kDuration - 0.002)) {
 			val *=
-				(sin(2 * M_PI * (double)(numFrames - i) 
+				(cos(2 * M_PI * (double)(numFrames - i) 
 					/ (framerate * kDuration))) * 0.5;
 		}
 
-		if (i < kFileFormat.u.raw_audio.frame_rate * 0.002) {
+		if (i < kFileFormat.u.raw_audio.frame_rate * kDuration) {
 			val *=
-				(-sin(2 * M_PI * (double)(numFrames - i) 
-					/ (framerate * 0.002))) * 0.5;
+				(-cos(2 * M_PI * (double)(numFrames - i) 
+					/ (framerate * kDuration)) * 0.5);
 		}
 
 		*data = val;
