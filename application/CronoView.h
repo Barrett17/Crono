@@ -20,6 +20,7 @@
  *		Davide Gessa, dak.linux@gmail.com
  *		Dario Casalinuovo
  */
+
 #ifndef CRONO_VIEW_H
 #define CRONO_VIEW_H
 
